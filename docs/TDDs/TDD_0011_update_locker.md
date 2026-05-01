@@ -47,11 +47,11 @@ Actualización parcial de la entidad.
 
 | Escenario                      | Resultado Esperado                                           | Código HTTP actual        |
 | ------------------------------ | ------------------------------------------------------------ | ------------------------- |
-| Casillero inexistente          | Mensaje: "El casillero no existe"                            | 400 Bad Request           |
+| Casillero inexistente          | Mensaje: "El casillero no existe"                            | 404 Not Found             |
 | Asignar si es "Maintenance"    | Mensaje: "No se puede asignar un casillero en mantenimiento" | 400 Bad Request           |
 | Asignar casillero ya ocupado   | Mensaje: "El casillero ya está asignado a otro socio"        | 409 Conflict              |
-| Socio inexistente              | Mensaje: "El socio referenciado no existe"                   | 400 Bad Request           |
-| Error de conexión a DB         | Mensaje: error del motor de base de datos                    | 400 Bad Request           |
+| Socio inexistente              | Mensaje: "El socio referenciado no existe"                   | 404 Not Found             |
+| Error de conexión a DB         | Mensaje: error del motor de base de datos                    | 500 Internal Server Error |
 | Modificación exitosa           | Retorna los datos del casillero actualizado                  | 200 OK                    |
 
 ## Plan de Implementación

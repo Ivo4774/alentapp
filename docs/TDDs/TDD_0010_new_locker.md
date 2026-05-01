@@ -1,7 +1,7 @@
 ---
 id: 0010
 estado: En revisión
-autor: Jero
+autor: Jeronimo Molina
 fecha: 2026-05-01
 titulo: Alta de Casilleros (Locker)
 ---
@@ -54,7 +54,7 @@ Definición de DTOs en el paquete compartido para asegurar el tipado entre front
 | ------------------------------ | ------------------------------------------------------------ | ------------------------- |
 | Crear con número duplicado     | Mensaje: "El número de casillero ya se encuentra registrado" | 409 Conflict              |
 | Faltan datos requeridos        | Mensaje: "El número y la ubicación son obligatorios"         | 400 Bad Request           |
-| Error de conexión a DB         | Mensaje: error del motor de base de datos                    | 400 Bad Request           |
+| Error de conexión a DB         | Mensaje: error del motor de base de datos                    | 500 Internal Server Error |
 | Creación exitosa               | Retorna los datos del nuevo casillero                        | 201 Created               |
 
 ## Plan de Implementación

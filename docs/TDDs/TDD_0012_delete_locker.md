@@ -44,9 +44,9 @@ Al tratarse de una operación destructiva que solo requiere conocer el identific
 
 | Escenario                      | Resultado Esperado                                           | Código HTTP actual        |
 | ------------------------------ | ------------------------------------------------------------ | ------------------------- |
-| Casillero inexistente          | Mensaje: "El casillero no existe"                            | 400 Bad Request           |
+| Casillero inexistente          | Mensaje: "El casillero no existe"                            | 404 Not Found             |
 | Eliminar casillero ocupado     | Mensaje: "No se puede eliminar un casillero asignado"        | 409 Conflict              |
-| Error de conexión a DB         | Mensaje: error del motor de base de datos                    | 400 Bad Request           |
+| Error de conexión a DB         | Mensaje: error del motor de base de datos                    | 500 Internal Server Error |
 | Eliminación exitosa            | Respuesta vacía                                              | 204 No Content            |
 
 ## Plan de Implementación
