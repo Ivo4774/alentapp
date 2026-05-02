@@ -14,7 +14,7 @@ titulo: Baja de Casilleros (Locker)
 Permitir a los administrativos dar de baja permanentemente un casillero del sistema (por ejemplo, si fue desmantelado físicamente o se cargó por error) para mantener el inventario real actualizado.
 
 ### User Persona
-* **Nombre**: Personal Administrativo / Encargado de Vestuarios.
+* **Nombre**: Maximiliano (Administrativo / Encargado de Vestuarios).
 * **Necesidad**: Borrar un casillero que ya no existe físicamente, de forma rápida desde la tabla principal. Necesita una advertencia antes de borrar para no cometer equivocaciones.
 
 ### Criterios de Aceptación

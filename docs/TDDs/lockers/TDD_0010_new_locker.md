@@ -14,7 +14,7 @@ titulo: Alta de Casilleros (Locker)
 Permitir a la administración del club registrar nuevos casilleros físicos en el sistema para ampliar el inventario disponible en los vestuarios.
 
 ### User Persona
-* **Nombre**: Personal Administrativo / Encargado de Vestuarios.
+* **Nombre**: Maximliano (Administrativo / Encargado de Vestuarios).
 * **Necesidad**: Ingresar nuevos casilleros al sistema indicando su número y ubicación, asegurándose de no duplicar números existentes.
 
 ### Criterios de Aceptación

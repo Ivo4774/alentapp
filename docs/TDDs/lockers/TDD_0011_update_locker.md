@@ -14,7 +14,7 @@ titulo: Modificación y Asignación de Casilleros (Locker)
 Permitir la edición de los datos de un casillero (número, ubicación, estado) y gestionar su asignación a un socio específico.
 
 ### User Persona
-* **Nombre**: Personal Administrativo.
+* **Nombre**: Maximliano (Administrativo).
 * **Necesidad**: Modificar el estado de un casillero (ej. ponerlo en mantenimiento si se rompe la puerta) o asignarlo a un nuevo socio que lo solicitó.
 
 ### Criterios de Aceptación
