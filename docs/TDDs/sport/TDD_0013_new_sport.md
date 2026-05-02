@@ -16,27 +16,28 @@ Permitir que un administrativo pueda dar de alta nuevas disciplinas deportivas e
 
 ### User Persona
 
-- Nombre: Arriel (Administrativo).
+- Nombre: Ariel (Administrativo).
 - Necesidad: Configurar rápidamente un nuevo deporte disponible para la temporada, asegurándose de que los cupos y requisitos médicos queden bien establecidos.
 
 ### Criterios de Aceptación
 
-- El sistema debe validar que el nombre del deporte sea único en la base de datos.
-- El sistema debe validar obligatoriamente que el cupo máximo sea un valor numérico mayor a cero.
+- El sistema debe validar que el nombre del deporte sea único e inmutable tras su creación.
+- El sistema debe validar obligatoriamente que el cupo máximo sea mayor a cero.
+- Validación de Negocio: El precio adicional (additional_price) debe ser igual o mayor a 0 (no se admiten valores negativos).
+- El sistema debe permitir definir si el deporte requiere certificado médico mediante el boolean `requires_medical_certificate`.
 - Al finalizar, el sistema debe mostrar un mensaje de éxito y limpiar el formulario.
-- El deporte debe quedar habilitado inmediatamente tras su creación.
 
 ## Diseño Técnico (RFC)
 
 ### Modelo de Datos
 
-Se definirá la entidad `Sport` con las siguientes propiedades y restricciones:
+Se definirá la entidad Sport con las siguientes propiedades y restricciones:
 
 - `id`: Identificador único universal (UUID).
 - `name`: Cadena de texto, único e inmutable.
 - `description`: Cadena de texto.
 - `max_capacity`: Entero, debe ser mayor a 0.
-- `additional_price`: Número decimal.
+- `additional_price`: Número decimal, no negativo (mayor o igual a 0).
 - `requires_medical_certificate`: Booleano.
 
 ### Contrato de API (@alentapp/shared)
@@ -58,7 +59,7 @@ Definiremos los tipos en el paquete compartido para asegurar sincronización:
 ### Componentes de Arquitectura Hexagonal
 
 1. Puerto: SportRepository (Interface en el Dominio).
-2. Caso de Uso: CreateSportUseCase (Lógica que verifica que la capacidad sea mayor a 0 y si el nombre ya existe).
+2. Caso de Uso: CreateSportUseCase (Lógica que verifica capacidad, precio no negativo y unicidad del nombre).
 3. Adaptador de Salida: PostgresSportRepository (Implementación real en BD).
 4. Adaptador de Entrada: SportController (Ruta HTTP).
 
@@ -68,12 +69,12 @@ Definiremos los tipos en el paquete compartido para asegurar sincronización:
 | -------------------------- | --------------------------------------------- | ------------------------- |
 | Nombre ya registrado       | Mensaje: "Ya existe un deporte con ese nombre"| 409 Conflict              |
 | Capacidad en 0 o negativa  | Mensaje: "El cupo debe ser mayor a cero"      | 400 Bad Request           |
+| Precio adicional negativo  | Mensaje: "El precio no puede ser negativo"    | 400 Bad Request           |
 | Error de conexión a DB     | Mensaje: "Error interno, reintente más tarde" | 500 Internal Server Error |
 | Creación exitosa           | Retorna el objeto del deporte creado          | 201 Created               |
 
 ## Plan de Implementación
 
-1. Definir esquema de persistencia y correr migración.
-2. Crear tipos en shared y puerto en el Dominio.
-3. Implementar el repositorio y el caso de uso.
-4. Crear formulario en React y conectar con el endpoint del backend.
+1. Definir CreateSportRequest y SportResponse en @alentapp/shared.
+2. Implementar lógica de validación de capacidad y precio en la entidad Sport (Domain).
+3. Implementar el caso de uso CreateSportUseCase y su puerto de salida.
