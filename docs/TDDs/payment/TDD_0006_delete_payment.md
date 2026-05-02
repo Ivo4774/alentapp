@@ -21,6 +21,7 @@ Garantizar la integridad de la auditoría financiera impidiendo el borrado físi
 *   El sistema no debe permitir la eliminación física (`DELETE`) del registro en la base de datos.
 *   El estado del pago debe cambiar a "Anulado".
 *   Un pago anulado queda inhabilitado para cualquier operación posterior (como el cobro).
+*   Un pago en estado "Pagado" no puede ser anulado.
 
 ## Diseño Técnico (RFC)
 
@@ -44,7 +45,7 @@ Garantizar la integridad de la auditoría financiera impidiendo el borrado físi
 | Escenario                   | Resultado Esperado                            | Código HTTP               |
 | ----------------------------| --------------------------------------------- | ------------------------- |
 | Pago inexistente            | Error: "No se encontró el registro a anular"  | 404 Not Found             |
-| Pago ya pagado              | Permite anulación pero con advertencia/log    | 200 OK (o lógica definida)|
+| Pago ya pagado              | No permite anulación                          | 409 Conflict              |
 | Intento de borrado físico   | Error: "Método no permitido"                  | 405 Method Not Allowed    |
 
 ## Plan de Implementación
