@@ -14,7 +14,7 @@ titulo: Crear Pago de Cuota Social
 Permitir el registro de las cuotas de los socios del Club Alentapp. El objetivo es generar un comprobante digital pendiente de cobro para realizar su seguimiento.
 
 ### User Persona
-*   **Nombre**: Tesorero
+*   **Nombre**: Juan (Tesorero/Administrativo)
 *   **Necesidad**: Generar un nuevo registro de deuda para un socio específico de manera rápida y con validaciones automáticas.
 
 ### Criterios de Aceptación

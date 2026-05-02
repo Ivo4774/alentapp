@@ -14,7 +14,7 @@ titulo: Anulación de Pago (Borrado Lógico)
 Garantizar la integridad de la auditoría financiera impidiendo el borrado físico de registros. La funcionalidad resuelve errores mediante la anulación del registro, manteniendo la evidencia de que existió.
 
 ### User Persona
-*   **Nombre**: Tesorero
+*   **Nombre**: Juan (Tesorero/Administrativo)
 *   **Necesidad**: Cancelar un pago generado por error (ej. duplicado o monto incorrecto) sin eliminarlo de la base de datos para no alterar la numeración o el historial de auditoría.
 
 ### Criterios de Aceptación

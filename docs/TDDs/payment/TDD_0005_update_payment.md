@@ -14,7 +14,7 @@ titulo: Registrar Cobro de Pago
 Registrar el ingreso efectivo de dinero al club cuando un socio abona una cuota previamente generada.
 
 ### User Persona
-*   **Nombre**: Tesorero
+*   **Nombre**: Juan (Tesorero/Administrativo)
 *   **Necesidad**: Marcar una cuota como pagada al recibir el dinero, dejando constancia de la fecha exacta de la transacción.
 
 ### Criterios de Aceptación
