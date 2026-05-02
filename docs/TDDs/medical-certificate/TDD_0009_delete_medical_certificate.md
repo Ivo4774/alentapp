@@ -34,7 +34,7 @@ Al ser una operación que solo requiere identificar el recurso a destruir, no se
 
 - **Endpoint**: `DELETE /api/v1/medical-certificates/:id`
 - **Request Body**: `None`
-- **Response**: `{ "message": "Certificado eliminado con éxito" }` (Status 200 OK)
+- **Response**: `Empty Body` (Status 204 No Content)
 
 ### Componentes de Arquitectura Hexagonal
 
@@ -48,7 +48,7 @@ Al ser una operación que solo requiere identificar el recurso a destruir, no se
 | Escenario | Resultado Esperado | Código HTTP |
 | :--- | :--- | :--- |
 | Certificado ya eliminado o inexistente | Mensaje: "No se encontró el registro a eliminar" | 404 Not Found |
-| Error de conexión con PostgreSQL | Mensaje detallado del error del motor de DB para depuración | 500 Internal Server Error |
+| Error de conexión con PostgreSQL | Mensaje : "Error interno del servidor, intente más tarde" | 500 Internal Server Error |
 | Intento de borrar sin confirmación | El sistema no debe disparar la petición a la API | N/A |
 
 ## Plan de Implementación
@@ -57,4 +57,4 @@ Al ser una operación que solo requiere identificar el recurso a destruir, no se
 2. Implementar el `DeleteMedicalCertificateUseCase` con las validaciones de existencia previas.
 3. Crear el endpoint `DELETE` en el controlador y registrarlo en Fastify.
 4. Implementar el método de borrado en el servicio de Frontend (`medical-certificates.ts`).
-5. Añadir el botón de eliminar en la tabla de certificados y vincularlo con un `window.confirm` previo a la llamada.
+5. Añadir el botón de eliminar en la tabla de certificados y vincularlo con un modal de confirmación.
