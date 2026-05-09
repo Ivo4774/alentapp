@@ -1,54 +1,77 @@
 ---
 id: 0006
-estado: Pendiente
+estado: Propuesto
 autor: Pieroni María Belén
 fecha: 2026-04-30
-titulo: Anulación de Pago (Borrado Lógico)
+titulo: Eliminar Payment
 ---
 
-# TDD_0006_delete_payment: Anular Pago (Borrado Lógico)
+# TDD-0006: Eliminar Payment
 
 ## Contexto de Negocio (PRD)
 
 ### Objetivo
-Garantizar la integridad de la auditoría financiera impidiendo el borrado físico de registros. La funcionalidad resuelve errores mediante la anulación del registro, manteniendo la evidencia de que existió.
+Garantizar la integridad del historial financiero del club impidiendo el borrado fisico de registros de pago. La funcionalidad resuelve errores de carga mediante la cancelacion logica del registro, manteniendo la evidencia de que existio y preservando la trazabilidad de auditoria.
 
 ### User Persona
-*   **Nombre**: Juan (Tesorero/Administrativo)
-*   **Necesidad**: Cancelar un pago generado por error (ej. duplicado o monto incorrecto) sin eliminarlo de la base de datos para no alterar la numeración o el historial de auditoría.
+*   **Nombre**: Juan (Tesorero / Administrativo)
+*   **Necesidad**: Cancelar un pago generado por error (ej. duplicado o monto incorrecto) sin eliminarlo de la base de datos para no alterar el historial de auditoria.
 
-### Criterios de Aceptación
-*   El sistema no debe permitir la eliminación física (`DELETE`) del registro en la base de datos.
-*   El estado del pago debe cambiar a "Anulado".
-*   Un pago anulado queda inhabilitado para cualquier operación posterior (como el cobro).
-*   Un pago en estado "Pagado" no puede ser anulado.
+### Criterios de Aceptacion
+*   El sistema debe realizar un borrado logico: el estado del pago cambia a `Canceled` pero el registro se conserva en la base de datos.
+*   Solo se pueden cancelar pagos que esten en estado `Pending`.
+*   Un pago con estado `Paid` no puede ser cancelado.
+*   Un pago ya cancelado no puede volver a cancelarse.
+*   Al finalizar, el sistema debe retornar el objeto del pago actualizado con estado `Canceled`.
 
-## Diseño Técnico (RFC)
+---
+
+## Diseno Tecnico (RFC)
 
 ### Modelo de Datos
-*   `estado`: String (Actualización a "Anulado").
-*   La base de datos conserva el registro original intacto exceptuando el estado que ahora es "Anulado".
+Actualizacion parcial sobre la entidad `Payment`:
+*   `status`: String — Transicion a `Canceled`. Valores permitidos: `Pending` | `Paid` | `Canceled`.
 
 ### Contrato de API (@alentapp/shared)
-*   **Endpoint**: `PATCH /api/v1/payments/:id/anular`
-*   **Request Body**:
+*   **Endpoint**: `DELETE /api/v1/payments/:id`
+*   **Request Body**: Sin body.
+*   **Response Body**:
 ```ts
-{}
+// DELETE → 200 OK (borrado logico: retorna el recurso actualizado)
+{
+  id: string,
+  amount: number,
+  month: number,
+  year: number,
+  status: string,         // "Canceled"
+  due_date: string,       // ISO 8601
+  payment_date: string | null,
+  member_id: string
+}
 ```
 
 ### Componentes de Arquitectura Hexagonal
-*   **Domain**: Lógica para marcar el objeto como `Anulado`.
-*   **Application**: `AnularPaymentUseCase`.
-*   **Infrastructure**: El puerto de salida `PaymentRepository` **no incluye** un método `delete`, forzando el uso exclusivo del método `updateEstado`.
+*   **Domain**: Interfaz `PaymentRepository` (Puerto) con el metodo `updateStatus`. El puerto no expone un metodo `delete`, lo que garantiza a nivel de contrato que ningun caso de uso puede eliminar fisicamente un pago.
+*   **Application**: `CancelPaymentUseCase`. Recupera el pago por `id`, valida que el estado actual sea `Pending`, actualiza el estado a `Canceled` y persiste los cambios.
+*   **Infrastructure**: `PostgresPaymentRepository` que implementa el metodo `updateStatus` usando Prisma, y `PaymentController` que recibe el request `DELETE`, extrae el `id` de la URL y delega en el caso de uso.
+
+---
 
 ## Casos de Borde y Errores
-| Escenario                   | Resultado Esperado                            | Código HTTP               |
-| ----------------------------| --------------------------------------------- | ------------------------- |
-| Pago inexistente            | Error: "No se encontró el registro a anular"  | 404 Not Found             |
-| Pago ya pagado              | No permite anulación                          | 409 Conflict              |
-| Intento de borrado físico   | Error: "Método no permitido"                  | 405 Method Not Allowed    |
 
-## Plan de Implementación
-1. Implementar `AnularPaymentUseCase`.
-2. Asegurar que el adaptador de infraestructura solo realice `UPDATE` en la tabla de pagos.
-3. Validar en el controlador que no existan rutas DELETE para este recurso.
+| Escenario | Resultado Esperado | Codigo HTTP |
+| --------- | ------------------ | ----------- |
+| `id` de pago no existe en la base de datos | Mensaje: "Pago no encontrado" | 404 Not Found |
+| Pago ya tiene estado `Canceled` | Mensaje: "El pago ya se encuentra cancelado" | 409 Conflict |
+| Pago tiene estado `Paid` | Mensaje: "No se puede cancelar un pago ya acreditado" | 409 Conflict |
+| Error de conexion a la base de datos | Mensaje: "Error interno, por favor intente mas tarde" | 500 Internal Server Error |
+
+---
+
+## Plan de Implementacion
+1.  Verificar que `PaymentResponse` en `@alentapp/shared` contemple el campo `status` con el valor `Canceled`.
+2.  Confirmar que la interfaz `PaymentRepository` en la capa de Dominio expone `updateStatus` y no expone un metodo `delete`.
+3.  Implementar `CancelPaymentUseCase` con la validacion de transicion de estado (`Pending` → `Canceled`).
+4.  Reutilizar o extender el metodo `updateStatus` en `PostgresPaymentRepository` para soportar la transicion a `Canceled`.
+5.  Crear el endpoint `DELETE /payments/:id` en `PaymentController` y registrarlo en el router de Fastify.
+6.  Integrar la llamada en el Frontend y actualizar la vista de pagos para reflejar el nuevo estado.
