@@ -15,7 +15,7 @@ Digitalizar el proceso de recepción de aptitud física de los socios para asegu
 
 ### User Persona
 *   **Nombre**: Alberto (Tesorero/Administrativo)
-*   **Necesidad**: Cargar los certificados físicos que traen los socios de forma rápida. El sistema debe gestionar automáticamente la vigencia para que Alberto no tenga que buscar y dar de baja certificados viejos manualmente.
+*   **Necesidad**: Cargar los certificados físicos que traen los socios de forma rápida, delegando al sistema la gestión automática de la vigencia para evitar la búsqueda manual de registros obsoletos.
 
 ### Criterios de Aceptación
 *   El sistema debe permitir registrar la fecha de emisión, la fecha de vencimiento y la matrícula del médico.
@@ -38,13 +38,24 @@ Se utiliza la entidad `MedicalCertificate`:
 *   **Request Body**:
 ```ts
 {
+  issue_date: string,   // ISO 8601: "YYYY-MM-DD"
+  expiry_date: string,  // ISO 8601: "YYYY-MM-DD"
+  doctor_license: string,
+  member_id: string   // UUID del socio
+}
+```
+*   **Response Body**:
+```ts
+// POST → 201 Created
+{
+  id: string,
   issue_date: string,
   expiry_date: string,
   doctor_license: string,
+  is_validated: boolean,
   member_id: string
 }
 ```
-
 ### Componentes de Arquitectura Hexagonal
 *   **Domain**: Entidad `MedicalCertificate` e interfaz `MedicalCertificateRepository` (Puerto).
 *   **Application**: `CreateMedicalCertificateUseCase`. Orquesta la invalidación de certificados previos y la creación del nuevo registro.
@@ -55,6 +66,7 @@ Se utiliza la entidad `MedicalCertificate`:
 | ---------------------------------------------- | --------------------------------------------------- | ----------------------- |
 | Fecha de vencimiento anterior a la de emisión  | Mensaje: "La fecha de vencimiento es inválida"      | 400 Bad Request         |
 | Certificado con fecha de vencimiento ya pasada | Mensaje: "No se puede cargar un certificado vencido"| 400 Bad Request         |
+|Formato de fecha inválido                       | Mensaje: "Formato de fecha debe ser YYYY-MM-DD"     | 400 Bad Request         |
 | El socio no existe en el sistema               | Mensaje: "Socio no encontrado"                      | 404 Not Found           |
 | Error de conexión a la base de datos           | Mensaje: "Error interno del servidor"               | 500 Internal Server Error |
 
