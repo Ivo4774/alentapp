@@ -61,7 +61,7 @@ Se utiliza la entidad `Locker`:
 ```
 
 ### Componentes de Arquitectura Hexagonal
-*   **Domain**: Domain: Entidad Locker e interfaz LockerRepository (Puerto) con el método update necesario para esta operacion.
+*   **Domain**: Entidad Locker e interfaz LockerRepository (Puerto) con el método update necesario para esta operacion.
 *   **Application**: EditLockerUseCase. Orquesta la validación de negocio (verifica que no se asigne un socio si el estado enviado es Maintenance o si ya está en Maintenance) y luego llama al repositorio para actualizar.
 *   **Infrastructure**: PostgresLockerRepository que implementa el puerto usando Prisma, y LockerController que recibe el request HTTP PATCH, extrae los parametros y el body, y delega en el caso de uso.
 
