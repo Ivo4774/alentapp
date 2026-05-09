@@ -2,64 +2,83 @@
 id: 0010
 estado: En revisión
 autor: Jeronimo Molina
-fecha: 2026-05-01
-titulo: Alta de Casilleros (Locker)
+fecha: 2026-05-09
+titulo: Crear Locker
 ---
 
-# TDD-0010: Alta de Casilleros (Locker)
+# TDD-0010: Crear Locker
 
 ## Contexto de Negocio (PRD)
 
 ### Objetivo
-Permitir a la administración del club registrar nuevos casilleros físicos en el sistema para ampliar el inventario disponible en los vestuarios.
+Permitir a la administración registrar nuevos casilleros físicos en el sistema para ampliar el inventario de los vestuarios. Asegura que no existan casilleros duplicados en el club.
 
 ### User Persona
-* **Nombre**: Maximliano (Administrativo / Encargado de Vestuarios).
-* **Necesidad**: Ingresar nuevos casilleros al sistema indicando su número y ubicación, asegurándose de no duplicar números existentes.
+* **Nombre**: Maximiliano (Rol: Administrativo / Encargado de Vestuarios)
+* **Necesidad**: Ingresar manualmente al sistema los nuevos casilleros que el club compra, indicando su número exacto y su ubicación.
 
-### Criterios de Aceptación
-* El sistema debe permitir registrar un nuevo casillero con un número y ubicación.
-* El sistema debe garantizar que el número de casillero (`number`) sea único en todo el club.
-* Por defecto, el estado de un casillero recién creado debe ser "Available" (Disponible) y no debe tener un socio asignado.
+### Criterios de Aceptacion
+* El sistema debe permitir registrar un nuevo casillero requiriendo obligatoriamente un número y una ubicación.
+* El número de casillero (`number`) debe ser ingresado manualmente (no autogenerado) y el sistema debe garantizar que sea único.
+* Por defecto, el estado de un casillero recién creado debe ser "Available" y no debe estar vinculado a ningún socio.
 
-## Diseño Técnico (RFC)
+---
+
+## Diseno Tecnico (RFC)
 
 ### Modelo de Datos
-Se creará la entidad `Locker` en el esquema de Prisma (`schema.prisma`):
-* `id`: UUID (PK).
-* `number`: Int (Único / @unique).
-* `location`: String.
-* `status`: Enum ('Available', 'Occupied', 'Maintenance') con default en 'Available'.
-* `member_id`: UUID (FK a Member, Nullable).
+Se utiliza la entidad `Locker`:
+* `id`: String — Identificador unico universal (UUID).
+* `number`: Int — Número identificador del casillero (Único, ingresado manualmente, no autoincremental).
+* `location`: String — Ubicación física dentro del club.
+* `status`: String — Estado actual del casillero (Valores: Available | Occupied | Maintenance).
+* `member_id`: String — Relacion con el socio al que pertenece el registro (Nullable).
 
 ### Contrato de API (@alentapp/shared)
-Definición de DTOs en el paquete compartido para asegurar el tipado entre frontend y backend.
+
 * **Endpoint**: `POST /api/v1/lockers`
-* **Request Body** (`CreateLockerRequest`):
+
+*  **Request Body**:
 ```ts
 {
-    number: number;
-    location: string;
+  number: number,  
+  location: string  
 }
+```
+
+*  **Response Body**:*
+```ts
+{
+  id: string,
+  number: number,
+  location: string,
+  status: 'Available' | 'Occupied' | 'Maintenance',
+  member_id: string | null
+}
+```
 
 ### Componentes de Arquitectura Hexagonal
-1. Puerto: LockerRepository (Interface en el Dominio).
-2. Caso de Uso: CreateLocker (Lógica que verifica si el número de casillero ya existe antes de llamar al repositorio y asigna el estado 'Available' por defecto).
-3. Adaptador de Salida: PostgresLockerRepository (Implementación real en BD usando Prisma).
-4. Adaptador de Entrada: LockerController (Ruta HTTP POST).
+*   **Domain**: Entidad Locker e interfaz LockerRepository (Puerto) con el método create necesario para esta operacion.
+*   **Application**: CreateLockerUseCase. Orquesta la creación verificando primero que el número ingresado no exista ya en la base de datos, y luego asigna el estado inicial 'Available' antes de llamar al repositorio.
+*   **Infrastructure**: PostgresLockerRepository que implementa el puerto usando Prisma, y LockerController que recibe el request HTTP POST, extrae el body y delega en el caso de uso.
+
+---
 
 ## Casos de Borde y Errores
 
-| Escenario                      | Resultado Esperado                                           | Código HTTP actual        |
-| ------------------------------ | ------------------------------------------------------------ | ------------------------- |
-| Crear con número duplicado     | Mensaje: "El número de casillero ya se encuentra registrado" | 409 Conflict              |
-| Faltan datos requeridos        | Mensaje: "El número y la ubicación son obligatorios"         | 400 Bad Request           |
-| Error de conexión a DB         | Mensaje: error del motor de base de datos                    | 500 Internal Server Error |
-| Creación exitosa               | Retorna los datos del nuevo casillero                        | 201 Created               |
+| Escenario | Resultado Esperado | Codigo HTTP |
+| --------- | ------------------ | ----------- |
+| Falta número o ubicación | Mensaje: "El número y la ubicación son obligatorios" | 400 Bad Request |
+| El número de casillero ya existe | Mensaje: "El número de casillero ya se encuentra registrado" | 409 Conflict |
+| Error de conexion a la base de datos | Mensaje: "Error interno, por favor intente mas tarde" | 500 Internal Server Error |
 
-## Plan de Implementación
+--- 
 
-1. Definir esquema de persistencia (`Locker`) y correr migración.
-2. Crear tipos en shared (`CreateLockerRequest`) y puerto en el Dominio.
-3. Implementar el repositorio y el caso de uso (`CreateLocker`).
-4. Crear formulario de alta en React y conectar con el endpoint POST del backend.
+## Plan de Implementacion
+1.  Definir los tipos `CreateLockerRequest` y `LockerResponse` en `@alentapp/shared`.
+2.  Definir el modelo `Locker` en schema.prisma asegurando que number tenga la restricción @unique y no sea autoincremental. Correr la migracion con npx prisma migrate dev --name create_locker.
+3.  Definir la interfaz `LockerRepository` en la capa de Dominio con el metodo create.
+4.  Implementar `CreateLockerUseCase` con la validacion de unicidad del número.
+5.  Implementar el metodo correspondiente en `PostgresLockerRepository`.
+6.  Crear el endpoint POST en `LockerController` y registrarlo en el router de Fastify.
+7.  Integrar la llamada en el Frontend creando el formulario de alta y actualizar la vista correspondiente.
