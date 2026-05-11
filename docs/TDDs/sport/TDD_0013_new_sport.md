@@ -79,7 +79,6 @@ Se utiliza la entidad `Sport`:
 | Precio adicional negativo | Mensaje: "El precio no puede ser negativo" | 400 Bad Request |
 | Nombre ya registrado | Mensaje: "Ya existe un deporte con ese nombre" | 409 Conflict |
 | Error de conexión a la base de datos | Mensaje: "Error interno, por favor intente mas tarde" | 500 Internal Server Error |
-| Creacion exitosa | Retorna el objeto del deporte creado | 201 Created |
 
 ---
 
