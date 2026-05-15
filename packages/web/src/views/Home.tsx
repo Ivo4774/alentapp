@@ -1,5 +1,5 @@
 import { Box, SimpleGrid, Heading, Text, VStack } from "@chakra-ui/react";
-import { LuUsers } from "react-icons/lu";
+import { LuUsers, LuCreditCard } from "react-icons/lu";
 import { SectionCard } from "../components/SectionCard";
 
 export function HomeView() {
@@ -31,23 +31,12 @@ export function HomeView() {
           icon={LuUsers}
         />
 
-        {/* Future sections can be added here following the same pattern */}
-        <Box 
-          p="6" 
-          bg="bg.muted/30" 
-          borderRadius="2xl" 
-          borderWidth="1px" 
-          borderColor="border.subtle"
-          borderStyle="dashed"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          minH="250px"
-        >
-          <VStack>
-            <Text color="fg.muted" fontWeight="medium">Próximamente nuevas secciones</Text>
-          </VStack>
-        </Box>
+        <SectionCard 
+          title="Tesorería y Pagos"
+          description="Registra nuevas cuotas, controla deudas de los socios, realiza cobros y cancelaciones."
+          to="/payments"
+          icon={LuCreditCard}
+        />
       </SimpleGrid>
     </Box>
   );
