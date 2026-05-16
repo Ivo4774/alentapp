@@ -13,8 +13,8 @@ import { PostgresLockerRepository } from './infrastructure/PostgresLockerReposit
 import { LockerValidator } from './domain/services/LockerValidator.js';
 import { CreateLockerUseCase } from './application/NewLockerUseCase.js';
 import { LockerController } from './delivery/LockerController.js';
+import { UpdateLockerUseCase } from './application/UpdateLockerUseCase.js';
 import { GetLockersUseCase } from './application/GetLockersUseCase.js';
-
 
 export function buildApp() {
     const server = Fastify({
@@ -48,9 +48,10 @@ export function buildApp() {
     const lockerRepo = new PostgresLockerRepository();
     const lockerValidator = new LockerValidator(lockerRepo);
     const createLockerUseCase = new CreateLockerUseCase(lockerRepo, lockerValidator);
-    //const lockerController = new LockerController(createLockerUseCase);
     const getLockersUseCase = new GetLockersUseCase(lockerRepo);
-    const lockerController = new LockerController(createLockerUseCase, getLockersUseCase);
+    const updateLockerUseCase = new UpdateLockerUseCase(lockerRepo, lockerValidator);
+    const lockerController = new LockerController(createLockerUseCase, getLockersUseCase, updateLockerUseCase);
+    
 
     const memberController = new MemberController(
         createMemberUseCase, 
@@ -71,7 +72,7 @@ export function buildApp() {
     // --- RUTAS DE LOCKER ---
     server.get('/api/v1/lockers', lockerController.getAll.bind(lockerController));
     server.post('/api/v1/lockers', lockerController.create.bind(lockerController));
-
+    server.patch('/api/v1/lockers/:id', lockerController.update.bind(lockerController));
    
 
     return server;

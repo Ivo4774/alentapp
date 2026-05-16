@@ -1,11 +1,13 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { CreateLockerRequest } from '@alentapp/shared';
-// Importaremos el caso de uso que vamos a crear en el próximo paso
 import { CreateLockerUseCase } from '../application/NewLockerUseCase.js';
+import { GetLockersUseCase } from '../application/GetLockersUseCase.js';
+import { UpdateLockerUseCase } from '../application/UpdateLockerUseCase.js'; 
 
 export class LockerController {
     constructor(
         private readonly createLockerUseCase: CreateLockerUseCase,
+        private readonly updateLockerUseCase: UpdateLockerUseCase,
         private readonly getLockersUseCase: GetLockersUseCase
     ) {}
 
@@ -38,4 +40,24 @@ export class LockerController {
             return reply.status(500).send({ error: "Error interno, reintente más tarde" });
         }
     }
+    async update(
+        request: FastifyRequest<{ Params: { id: string }; Body: UpdateLockerRequest }>,
+        reply: FastifyReply,
+    ) {
+        try {
+            const result = await this.updateLockerUseCase.execute(
+                request.params.id,
+                request.body
+            );
+            return reply.status(200).send({ data: result });
+        } catch (error: any) {
+            if (error.message === 'El casillero no existe') {
+                return reply.status(404).send({ error: error.message });
+            }
+            if (error.message === 'Ya existe un casillero con ese número') {
+                return reply.status(409).send({ error: error.message });
+            }
+            return reply.status(500).send({ error: 'Error interno, por favor intente más tarde' });
+        }
+}
 }
