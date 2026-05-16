@@ -40,6 +40,7 @@ model Member {
     status     MemberStatus   @default(Activo)
     created_at DateTime       @default(now())
     lockers    Locker[] //Es el locker que tiene asignado el miembro
+    medical_certificates MedicalCertificate[]
 
     @@map("members") // Para que en la DB la tabla se llame 'members' en minúscula
 }
@@ -55,4 +56,16 @@ model Locker {
     updated_at DateTime     @updatedAt
 
     @@map("lockers")
+}
+
+model MedicalCertificate {
+    id             String   @id @default(uuid())
+    issue_date     DateTime @db.Date
+    expiry_date    DateTime @db.Date
+    doctor_license String
+    is_validated   Boolean  @default(true)
+    member_id      String
+    member         Member   @relation(fields: [member_id], references: [id])
+
+    @@map("medical_certificates")
 }
