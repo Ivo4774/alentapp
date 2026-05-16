@@ -13,7 +13,7 @@ import { PostgresLockerRepository } from './infrastructure/PostgresLockerReposit
 import { LockerValidator } from './domain/services/LockerValidator.js';
 import { CreateLockerUseCase } from './application/NewLockerUseCase.js';
 import { LockerController } from './delivery/LockerController.js';
-
+import { GetLockersUseCase } from './application/GetLockersUseCase.js';
 
 
 export function buildApp() {
@@ -48,7 +48,9 @@ export function buildApp() {
     const lockerRepo = new PostgresLockerRepository();
     const lockerValidator = new LockerValidator(lockerRepo);
     const createLockerUseCase = new CreateLockerUseCase(lockerRepo, lockerValidator);
-    const lockerController = new LockerController(createLockerUseCase);
+    //const lockerController = new LockerController(createLockerUseCase);
+    const getLockersUseCase = new GetLockersUseCase(lockerRepo);
+    const lockerController = new LockerController(createLockerUseCase, getLockersUseCase);
 
     const memberController = new MemberController(
         createMemberUseCase, 
@@ -67,6 +69,7 @@ export function buildApp() {
     });
 
     // --- RUTAS DE LOCKER ---
+    server.get('/api/v1/lockers', lockerController.getAll.bind(lockerController));
     server.post('/api/v1/lockers', lockerController.create.bind(lockerController));
 
    

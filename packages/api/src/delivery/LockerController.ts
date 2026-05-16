@@ -5,8 +5,18 @@ import { CreateLockerUseCase } from '../application/NewLockerUseCase.js';
 
 export class LockerController {
     constructor(
-        private readonly createLockerUseCase: CreateLockerUseCase
+        private readonly createLockerUseCase: CreateLockerUseCase,
+        private readonly getLockersUseCase: GetLockersUseCase
     ) {}
+
+    async getAll(_request: FastifyRequest, reply: FastifyReply) {
+        try {
+            const lockers = await this.getLockersUseCase.execute();
+            return reply.status(200).send({ data: lockers });
+        } catch (error: any) {
+            return reply.status(500).send({ error: "Error interno, reintente más tarde" });
+        }
+    }
 
     async create(
         request: FastifyRequest<{ Body: CreateLockerRequest }>,
