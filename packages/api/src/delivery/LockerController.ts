@@ -1,14 +1,16 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { CreateLockerRequest, UpdateLockerRequest } from '@alentapp/shared'; // <-- Agregado UpdateLockerRequest
-import { CreateLockerUseCase } from '../application/NewLockerUseCase.js'; // <-- Corregido el nombre a CreateLockerUseCase (antes decía NewLockerUseCase)
+import { CreateLockerRequest, UpdateLockerRequest } from '@alentapp/shared'; 
+import { CreateLockerUseCase } from '../application/NewLockerUseCase.js'; 
 import { GetLockersUseCase } from '../application/GetLockersUseCase.js';
 import { UpdateLockerUseCase } from '../application/UpdateLockerUseCase.js'; 
+import { DeleteLockerUseCase } from '../application/DeleteLockerUseCase.js';
 
 export class LockerController {
     constructor(
         private readonly createLockerUseCase: CreateLockerUseCase,
-        private readonly getLockersUseCase: GetLockersUseCase,     // <-- Ahora Get está 2do
-        private readonly updateLockerUseCase: UpdateLockerUseCase  // <-- Y Update está 3ro
+        private readonly getLockersUseCase: GetLockersUseCase,     
+        private readonly updateLockerUseCase: UpdateLockerUseCase,  
+        private readonly deleteLockerUseCase: DeleteLockerUseCase   
     ) {}
 
     async getAll(_request: FastifyRequest, reply: FastifyReply) {
@@ -55,4 +57,20 @@ export class LockerController {
             return reply.status(500).send({ error: 'Error interno, por favor intente más tarde' });
         }
     }
+
+    async delete(
+        request: FastifyRequest<{ Params: { id: string } }>,
+        reply: FastifyReply,
+    ) {
+        try {
+            await this.deleteLockerUseCase.execute(request.params.id);
+            return reply.status(204).send(); // 204 No Content es el estándar para un borrado exitoso
+        } catch (error: any) {
+            if (error.message === 'El casillero no existe') {
+                return reply.status(404).send({ error: error.message });
+            }
+            return reply.status(500).send({ error: 'Error interno, por favor intente más tarde' });
+        }
+    }
 }
+
