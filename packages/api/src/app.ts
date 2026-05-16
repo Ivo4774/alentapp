@@ -8,6 +8,10 @@ import { UpdateMemberUseCase } from './application/UpdateMemberUseCase.js';
 import { DeleteMemberUseCase } from './application/DeleteMemberUseCase.js';
 import { MemberController } from './delivery/MemberController.js';
 
+import { PostgresPaymentRepository } from './infrastructure/PostgresPaymentRepository.js';
+import { PaymentController } from './delivery/PaymentController.js';
+import { PrismaClient } from './generated/client/index.js';
+
 export function buildApp() {
     const server = Fastify({
         logger: {
@@ -43,10 +47,16 @@ export function buildApp() {
         deleteMemberUseCase
     );
 
+    const paymentRepo = new PostgresPaymentRepository();
+    const paymentController = new PaymentController(paymentRepo, memberRepo);
+
     server.get('/api/v1/socios', memberController.getAll.bind(memberController));
     server.post('/api/v1/socios', memberController.create.bind(memberController));
     server.put('/api/v1/socios/:id', memberController.update.bind(memberController));
     server.delete('/api/v1/socios/:id', memberController.delete.bind(memberController));
+
+    server.get('/api/v1/payments', paymentController.getAll.bind(paymentController));
+    server.post('/api/v1/payments', paymentController.create.bind(paymentController));
 
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
