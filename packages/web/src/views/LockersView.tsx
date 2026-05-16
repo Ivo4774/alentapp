@@ -81,10 +81,15 @@ export function LockersView() {
     setIsSubmitting(true);
     try {
       if (editingLockerId) {
+        // 1. Armamos los datos forzando a que el número sea un número real (Int)
+        const updatePayload: UpdateLockerRequest = {
+            ...formData,
+            number: parseInt(formData.number.toString(), 10)
+        };
         // Ejecutamos la llamada al servicio asíncrono
-        const updatedLocker = await lockersService.update(editingLockerId, formData as UpdateLockerRequest);
+        const updatedLocker = await lockersService.update(editingLockerId, updatePayload);
         
-        // Actualización inmutable del estado! (Siguiendo la guía de Belén)
+        
         setLockers(prev => prev.map(item => item.id === editingLockerId ? updatedLocker : item));
       } else {
         const payload: CreateLockerRequest = {
