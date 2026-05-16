@@ -53,3 +53,7 @@ export interface CreatePaymentRequest {
   due_date: string;       // ISO Date String (YYYY-MM-DD)
   member_id: string;
 }
+
+export interface PayPaymentRequest {
+  payment_date: string;   // ISO Date String (YYYY-MM-DD)
+}
