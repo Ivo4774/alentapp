@@ -14,8 +14,8 @@ import {
 } from "@chakra-ui/react";
 import { LuPlus, LuRefreshCw, LuBan } from "react-icons/lu";
 import { useEffect, useState } from "react";
-import { paymentsService } from "../services/payments";
-import { membersService } from "../services/members";
+import { paymentsService } from "../services/payments.js";
+import { membersService } from "../services/members.js";
 import type { PaymentDTO, CreatePaymentRequest, MemberDTO, PaymentStatus } from "@alentapp/shared";
 import { 
   DialogRoot, 
@@ -26,8 +26,8 @@ import {
   DialogFooter, 
   DialogActionTrigger,
   DialogCloseTrigger
-} from "../components/ui/dialog";
-import { Field } from "../components/ui/field";
+} from "../components/ui/dialog.js";
+import { Field } from "../components/ui/field.js";
 import { 
   SelectRoot, 
   SelectTrigger, 
@@ -35,7 +35,7 @@ import {
   SelectContent, 
   SelectItem, 
   createListCollection 
-} from "../components/ui/select";
+} from "../components/ui/select.js";
 
 // Configuración de los meses para el Selector
 const monthsCollection = createListCollection({
@@ -280,15 +280,13 @@ export function PaymentsView() {
             <Table.Root size="md" variant="line" interactive>
               <Table.Header>
                 <Table.Row bg="bg.muted/50">
-                  <Table.Row>
-                    <Table.ColumnHeader py="4">Socio</Table.ColumnHeader>
-                    <Table.ColumnHeader py="4">Monto</Table.ColumnHeader>
-                    <Table.ColumnHeader py="4">Período</Table.ColumnHeader>
-                    <Table.ColumnHeader py="4">Vencimiento</Table.ColumnHeader>
-                    <Table.ColumnHeader py="4">Fecha de Pago</Table.ColumnHeader>
-                    <Table.ColumnHeader py="4">Estado</Table.ColumnHeader>
-                    <Table.ColumnHeader py="4" textAlign="end">Acciones</Table.ColumnHeader>
-                  </Table.Row>
+                  <Table.ColumnHeader py="4">Socio</Table.ColumnHeader>
+                  <Table.ColumnHeader py="4">Monto</Table.ColumnHeader>
+                  <Table.ColumnHeader py="4">Período</Table.ColumnHeader>
+                  <Table.ColumnHeader py="4">Vencimiento</Table.ColumnHeader>
+                  <Table.ColumnHeader py="4">Fecha de Pago</Table.ColumnHeader>
+                  <Table.ColumnHeader py="4">Estado</Table.ColumnHeader>
+                  <Table.ColumnHeader py="4" textAlign="end">Acciones</Table.ColumnHeader>
                 </Table.Row>
               </Table.Header>
               <Table.Body>
