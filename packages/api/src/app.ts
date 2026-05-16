@@ -8,6 +8,14 @@ import { UpdateMemberUseCase } from './application/UpdateMemberUseCase.js';
 import { DeleteMemberUseCase } from './application/DeleteMemberUseCase.js';
 import { MemberController } from './delivery/MemberController.js';
 
+//Lockers
+import { PostgresLockerRepository } from './infrastructure/PostgresLockerRepository.js';
+import { LockerValidator } from './domain/services/LockerValidator.js';
+import { CreateLockerUseCase } from './application/NewLockerUseCase.js';
+import { LockerController } from './delivery/LockerController.js';
+
+
+
 export function buildApp() {
     const server = Fastify({
         logger: {
@@ -23,7 +31,7 @@ export function buildApp() {
 
     server.register(cors, {
         origin: true,
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
         credentials: true,
     });
@@ -35,6 +43,12 @@ export function buildApp() {
     const getMembersUseCase = new GetMembersUseCase(memberRepo);
     const updateMemberUseCase = new UpdateMemberUseCase(memberRepo, memberValidator);
     const deleteMemberUseCase = new DeleteMemberUseCase(memberRepo);
+
+    // --- INSTANCIAS DE LOCKER ---
+    const lockerRepo = new PostgresLockerRepository();
+    const lockerValidator = new LockerValidator(lockerRepo);
+    const createLockerUseCase = new CreateLockerUseCase(lockerRepo, lockerValidator);
+    const lockerController = new LockerController(createLockerUseCase);
 
     const memberController = new MemberController(
         createMemberUseCase, 
@@ -51,6 +65,11 @@ export function buildApp() {
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
     });
+
+    // --- RUTAS DE LOCKER ---
+    server.post('/api/v1/lockers', lockerController.create.bind(lockerController));
+
+   
 
     return server;
 }
@@ -71,3 +90,4 @@ if (process.argv[1] && process.argv[1].endsWith('app.ts')) {
         });
     });
 }
+
