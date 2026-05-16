@@ -1,4 +1,4 @@
-import { CreatePaymentRequest, PaymentDTO } from '@alentapp/shared';
+import { CreatePaymentRequest, PaymentDTO, PaymentStatus } from '@alentapp/shared';
 
 // Esta interfaz es el "Puerto de Salida" para los Pagos.
 export interface PaymentRepository {
@@ -6,5 +6,5 @@ export interface PaymentRepository {
   findById(id: string): Promise<PaymentDTO | null>;
   findAll(): Promise<PaymentDTO[]>;
   findByMemberId(memberId: string): Promise<PaymentDTO[]>;
-  updateStatus(id: string, status: PaymentDTO['status'], paymentDate?: string): Promise<PaymentDTO>;
+  updateStatus(id: string, status: PaymentStatus, paymentDate: Date): Promise<PaymentDTO>;
 }
