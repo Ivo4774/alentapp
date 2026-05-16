@@ -1,14 +1,14 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { CreateLockerRequest } from '@alentapp/shared';
-import { CreateLockerUseCase } from '../application/NewLockerUseCase.js';
+import { CreateLockerRequest, UpdateLockerRequest } from '@alentapp/shared'; // <-- Agregado UpdateLockerRequest
+import { CreateLockerUseCase } from '../application/NewLockerUseCase.js'; // <-- Corregido el nombre a CreateLockerUseCase (antes decía NewLockerUseCase)
 import { GetLockersUseCase } from '../application/GetLockersUseCase.js';
 import { UpdateLockerUseCase } from '../application/UpdateLockerUseCase.js'; 
 
 export class LockerController {
     constructor(
         private readonly createLockerUseCase: CreateLockerUseCase,
-        private readonly updateLockerUseCase: UpdateLockerUseCase,
-        private readonly getLockersUseCase: GetLockersUseCase
+        private readonly getLockersUseCase: GetLockersUseCase,     // <-- Ahora Get está 2do
+        private readonly updateLockerUseCase: UpdateLockerUseCase  // <-- Y Update está 3ro
     ) {}
 
     async getAll(_request: FastifyRequest, reply: FastifyReply) {
@@ -25,21 +25,16 @@ export class LockerController {
         reply: FastifyReply,
     ) {
         try {
-            // Ejecutamos el caso de uso (la lógica de negocio)
             const locker = await this.createLockerUseCase.execute(request.body);
-            
-            // Según el TDD-0010, devolvemos 201 Created si es exitoso
             return reply.status(201).send({ data: locker });
         } catch (error: any) {
-            // Evaluamos la regla de negocio: El número debe ser único
             if (error.message.includes('Ya existe un casillero con ese número')) {
-                return reply.status(409).send({ error: error.message }); // 409 Conflict
+                return reply.status(409).send({ error: error.message }); 
             }
-            
-            // Error 500 para fallos generales de DB o servidor
             return reply.status(500).send({ error: "Error interno, reintente más tarde" });
         }
     }
+
     async update(
         request: FastifyRequest<{ Params: { id: string }; Body: UpdateLockerRequest }>,
         reply: FastifyReply,
@@ -59,5 +54,5 @@ export class LockerController {
             }
             return reply.status(500).send({ error: 'Error interno, por favor intente más tarde' });
         }
-}
+    }
 }

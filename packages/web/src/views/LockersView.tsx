@@ -61,7 +61,18 @@ export function LockersView() {
 
   const openCreateModal = () => {
     setEditingLockerId(null);
-    setFormData({ number: "" as any, location: "" }); // Truco de UI para que el input empiece vacío
+    setFormData({ number: "" as any, location: "" }); 
+    setIsDialogOpen(true);
+  };
+
+  const openEditModal = (locker: LockerDTO) => {
+    setEditingLockerId(locker.id);
+    setFormData({
+      number: locker.number,
+      location: locker.location,
+      status: locker.status, // En TDD-0011 permitimos cambiar estado
+      member_id: locker.member_id
+    });
     setIsDialogOpen(true);
   };
 
@@ -70,18 +81,20 @@ export function LockersView() {
     setIsSubmitting(true);
     try {
       if (editingLockerId) {
-        // La edición se hará en el TDD-0011
-        await lockersService.update(editingLockerId, formData as UpdateLockerRequest);
+        // Ejecutamos la llamada al servicio asíncrono
+        const updatedLocker = await lockersService.update(editingLockerId, formData as UpdateLockerRequest);
+        
+        // Actualización inmutable del estado! (Siguiendo la guía de Belén)
+        setLockers(prev => prev.map(item => item.id === editingLockerId ? updatedLocker : item));
       } else {
-        // Aseguramos que el número se envíe como entero
         const payload: CreateLockerRequest = {
             number: parseInt(formData.number.toString(), 10),
             location: formData.location
         };
         await lockersService.create(payload);
+        fetchLockers(); // Para el alta seguimos haciendo fetch completo
       }
       setIsDialogOpen(false);
-      fetchLockers(); // Refresca la lista
     } catch (err: any) {
       alert(err.message || "Error al guardar el casillero");
     } finally {
@@ -138,7 +151,7 @@ export function LockersView() {
         <DialogContent>
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle>Agregar Nuevo Casillero</DialogTitle>
+              <DialogTitle>{editingLockerId ? "Editar Casillero" : "Agregar Nuevo Casillero"}</DialogTitle>
             </DialogHeader>
             <DialogBody>
               <Stack gap="4">
@@ -166,8 +179,8 @@ export function LockersView() {
                 <Button variant="outline">Cancelar</Button>
               </DialogActionTrigger>
               <Button type="submit" colorPalette="blue" loading={isSubmitting}>
-                Crear Casillero
-              </Button>
+                {editingLockerId ? "Guardar Cambios" : "Crear Casillero"}
+                </Button>
             </DialogFooter>
             <DialogCloseTrigger />
           </form>
@@ -237,6 +250,15 @@ export function LockersView() {
                     </Table.Cell>
                     <Table.Cell textAlign="end">
                       <HStack gap="2" justify="flex-end">
+                        {/* BOTÓN DE EDITAR QUE AGREGAMOS */}
+                        <IconButton 
+                          variant="ghost" 
+                          size="sm" 
+                          aria-label="Editar casillero"
+                          onClick={() => openEditModal(locker)}
+                        >
+                          <LuPencil />
+                        </IconButton>
                         <IconButton 
                           variant="ghost" 
                           size="sm" 
