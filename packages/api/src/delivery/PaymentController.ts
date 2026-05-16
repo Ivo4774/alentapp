@@ -1,8 +1,9 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { CreatePaymentUseCase } from '../application/payments/NewPaymentUseCase.js';
+import { PayPaymentUseCase } from '../application/payments/UpdatePaymentUseCase.js';
 import { PaymentRepository } from '../domain/PaymentRepository.js';
 import { MemberRepository } from '../domain/MemberRepository.js';
-import { CreatePaymentRequest } from '@alentapp/shared';
+import { CreatePaymentRequest, PayPaymentRequest } from '@alentapp/shared';
 
 export class PaymentController {
   constructor(
@@ -44,6 +45,42 @@ export class PaymentController {
       }
 
       return reply.status(500).send({ error: 'Error al procesar el registro del pago' });
+    }
+  }
+
+  // 2. Handler para PATCH /api/v1/payments/:id/pay (Registrar Pago Efectivo)
+  async pay(
+    request: FastifyRequest<{ Params: { id: string }; Body: PayPaymentRequest }>, 
+    reply: FastifyReply
+  ) {
+    try {
+      const payPaymentUseCase = new PayPaymentUseCase(this.paymentRepository);
+
+      const { id } = request.params;
+      const updatedPayment = await payPaymentUseCase.execute(id, request.body);
+
+      return reply.status(200).send({ data: updatedPayment });
+    } catch (error: any) {
+      // 400 Bad Request
+      if (error.message === 'La fecha de pago es obligatoria') {
+        return reply.status(400).send({ error: error.message });
+      }
+
+      // 404 Not Found
+      if (error.message === 'Pago no encontrado') {
+        return reply.status(404).send({ error: error.message });
+      }
+
+      // 409 Conflict (Manejo de estados inválidos)
+      if (
+        error.message === 'El pago ya fue registrado como pagado' || 
+        error.message === 'No se puede pagar un registro cancelado'
+      ) {
+        return reply.status(409).send({ error: error.message });
+      }
+
+      // 500 Internal Server Error
+      return reply.status(500).send({ error: 'Error interno, por favor intente mas tarde' });
     }
   }
 }
