@@ -65,12 +65,12 @@ export class PostgresPaymentRepository implements PaymentRepository {
         return payments.map(this.mapToDTO);
     }
 
-    async updateStatus(id: string, status: PaymentStatus, paymentDate?: string): Promise<PaymentDTO> {
+    async updateStatus(id: string, status: PaymentStatus, paymentDate: Date): Promise<PaymentDTO> {
         const payment = await prisma.payment.update({
             where: { id },
             data: {
                 status,
-                payment_date: paymentDate ? new Date(paymentDate) : null,
+                payment_date: paymentDate,
             },
         });
 
