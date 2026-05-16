@@ -280,15 +280,13 @@ export function PaymentsView() {
             <Table.Root size="md" variant="line" interactive>
               <Table.Header>
                 <Table.Row bg="bg.muted/50">
-                  <Table.Row>
-                    <Table.ColumnHeader py="4">Socio</Table.ColumnHeader>
-                    <Table.ColumnHeader py="4">Monto</Table.ColumnHeader>
-                    <Table.ColumnHeader py="4">Período</Table.ColumnHeader>
-                    <Table.ColumnHeader py="4">Vencimiento</Table.ColumnHeader>
-                    <Table.ColumnHeader py="4">Fecha de Pago</Table.ColumnHeader>
-                    <Table.ColumnHeader py="4">Estado</Table.ColumnHeader>
-                    <Table.ColumnHeader py="4" textAlign="end">Acciones</Table.ColumnHeader>
-                  </Table.Row>
+                  <Table.ColumnHeader py="4">Socio</Table.ColumnHeader>
+                  <Table.ColumnHeader py="4">Monto</Table.ColumnHeader>
+                  <Table.ColumnHeader py="4">Período</Table.ColumnHeader>
+                  <Table.ColumnHeader py="4">Vencimiento</Table.ColumnHeader>
+                  <Table.ColumnHeader py="4">Fecha de Pago</Table.ColumnHeader>
+                  <Table.ColumnHeader py="4">Estado</Table.ColumnHeader>
+                  <Table.ColumnHeader py="4" textAlign="end">Acciones</Table.ColumnHeader>
                 </Table.Row>
               </Table.Header>
               <Table.Body>
