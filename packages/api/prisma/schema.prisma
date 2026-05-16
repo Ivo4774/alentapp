@@ -39,16 +39,17 @@ model Member {
 }
 
 model Payment {
-  id           String    @id @default(uuid())
-  amount       Float
-  month        Int
-  year         Int
-  status       String    @default("Pending")
-  due_date     DateTime
-  payment_date DateTime?
-  member_id    String
+    id           String    @id @default(uuid())
+    amount       Float
+    month        Int
+    year         Int
+    status       String    @default("Pending")
+    due_date     DateTime
+    payment_date DateTime?
+    member_id    String
+    created_at   DateTime       @default(now())
 
-  member       Member    @relation(fields: [member_id], references: [id])
+    member       Member    @relation(fields: [member_id], references: [id])
 
   @@map("payments")
 }
