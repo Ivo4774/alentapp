@@ -1,6 +1,6 @@
-import { LockerRepository } from '../domain/LockerRepository.js';
-import { LockerValidator } from '../domain/services/LockerValidator.js';
-import { MemberRepository } from '../domain/MemberRepository.js';
+import { LockerRepository } from '../../domain/LockerRepository.js';
+import { LockerValidator } from '../../domain/services/LockerValidator.js';
+import { MemberRepository } from '../../domain/MemberRepository.js';
 import { LockerDTO, UpdateLockerRequest } from '@alentapp/shared';
 
 export class UpdateLockerUseCase {
