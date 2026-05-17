@@ -30,8 +30,12 @@ export class LockerController {
             const locker = await this.createLockerUseCase.execute(request.body);
             return reply.status(201).send({ data: locker });
         } catch (error: any) {
-            if (error.message.includes('Ya existe un casillero con ese número')) {
-                return reply.status(409).send({ error: error.message }); 
+            // Mapeo TDD-0010
+            if (error.message === 'El número y la ubicación son obligatorios') {
+                return reply.status(400).send({ error: error.message });
+            }
+            if (error.message === 'El número de casillero ya se encuentra registrado' || error.message === 'No se puede asignar un casillero en mantenimiento') {
+                return reply.status(409).send({ error: error.message });
             }
             return reply.status(500).send({ error: "Error interno, reintente más tarde" });
         }
@@ -48,13 +52,20 @@ export class LockerController {
             );
             return reply.status(200).send({ data: result });
         } catch (error: any) {
-            if (error.message === 'El casillero no existe') {
+            // Mapeo semántico estricto según la tabla del TDD-0011
+            if (error.message === 'Datos de actualización inválidos') {
+                return reply.status(400).send({ error: error.message });
+            }
+            if (error.message === 'El casillero no existe' || error.message === 'El socio referenciado no existe') {
                 return reply.status(404).send({ error: error.message });
             }
-            if (error.message === 'Ya existe un casillero con ese número') {
+            if (error.message === 'Ya existe un casillero con ese número' || error.message === 'No se puede asignar un casillero en mantenimiento' || error.message === 'El socio ya tiene un casillero asignado') {
                 return reply.status(409).send({ error: error.message });
             }
-            return reply.status(500).send({ error: 'Error interno, por favor intente más tarde' });
+
+           
+            
+            return reply.status(500).send({ error: 'Error interno, por favor intente mas tarde' });
         }
     }
 
@@ -69,7 +80,10 @@ export class LockerController {
             if (error.message === 'El casillero no existe') {
                 return reply.status(404).send({ error: error.message });
             }
-            return reply.status(500).send({ error: 'Error interno, por favor intente más tarde' });
+            if (error.message === 'No se puede eliminar un casillero asignado') {
+                return reply.status(409).send({ error: error.message });
+            }
+            return reply.status(500).send({ error: 'Error interno, por favor intente mas tarde' });
         }
     }
 }

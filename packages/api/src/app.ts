@@ -50,7 +50,7 @@ export function buildApp() {
     const lockerValidator = new LockerValidator(lockerRepo);
     const createLockerUseCase = new CreateLockerUseCase(lockerRepo, lockerValidator);
     const getLockersUseCase = new GetLockersUseCase(lockerRepo);
-    const updateLockerUseCase = new UpdateLockerUseCase(lockerRepo, lockerValidator);
+    const updateLockerUseCase = new UpdateLockerUseCase(lockerRepo, lockerValidator, memberRepo);
     const deleteLockerUseCase = new DeleteLockerUseCase(lockerRepo);
     const lockerController = new LockerController(createLockerUseCase, getLockersUseCase, updateLockerUseCase, deleteLockerUseCase);
 

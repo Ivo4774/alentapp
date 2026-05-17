@@ -15,7 +15,8 @@ import {
 import { LuPlus, LuPencil, LuTrash2, LuRefreshCw } from "react-icons/lu";
 import { useEffect, useState } from "react";
 import { lockersService } from "../services/lockers";
-import type { LockerDTO, CreateLockerRequest, UpdateLockerRequest, LockerStatus } from "@alentapp/shared";
+import { membersService } from "../services/members";
+import type { LockerDTO, CreateLockerRequest, UpdateLockerRequest, LockerStatus, MemberDTO } from "@alentapp/shared";
 import { 
   DialogRoot, 
   DialogContent, 
@@ -30,6 +31,7 @@ import { Field } from "../components/ui/field";
 
 export function LockersView() {
   const [lockers, setLockers] = useState<LockerDTO[]>([]);
+  const [members, setMembers] = useState<MemberDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -39,9 +41,11 @@ export function LockersView() {
   const [editingLockerId, setEditingLockerId] = useState<string | null>(null);
 
   // Form state
-  const [formData, setFormData] = useState<CreateLockerRequest>({
+  const [formData, setFormData] = useState<any>({
     number: 0,
     location: "",
+    status: "Available",
+    member_id: null
   });
 
   const fetchLockers = async () => {
@@ -56,6 +60,16 @@ export function LockersView() {
       setLockers([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchMembers = async () => {
+    try {
+      // Reutilizamos tu servicio existente
+      const data = await membersService.getAll();
+      setMembers(data);
+    } catch (err: any) {
+      console.error("Error al cargar la lista de socios", err);
     }
   };
 
@@ -86,11 +100,11 @@ export function LockersView() {
             ...formData,
             number: parseInt(formData.number.toString(), 10)
         };
-        // Ejecutamos la llamada al servicio asíncrono
-        const updatedLocker = await lockersService.update(editingLockerId, updatePayload);
+
+        await lockersService.update(editingLockerId, updatePayload);
         
-        
-        setLockers(prev => prev.map(item => item.id === editingLockerId ? updatedLocker : item));
+        // Recargamos la lista fresca desde el backend
+        fetchLockers();
       } else {
         const payload: CreateLockerRequest = {
             number: parseInt(formData.number.toString(), 10),
@@ -120,6 +134,7 @@ export function LockersView() {
 
   useEffect(() => {
     fetchLockers();
+    fetchMembers();
   }, []);
 
   // Función para obtener colores según el estado del locker
@@ -177,6 +192,56 @@ export function LockersView() {
                     required
                   />
                 </Field>
+                {/* Renderizado condicional: Solo mostramos el estado si estamos editando */}
+                {editingLockerId && (
+                  <Field label="Estado del Casillero" required>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        borderRadius: "6px",
+                        border: "1px solid #3f444e", // Combina con las sutiles líneas de Chakra v3
+                        background: "#18181b",       // Mantiene el fondo oscuro del modal
+                        color: "white",
+                        fontSize: "14px",
+                        outline: "none"
+                      }}
+                    >
+                      <option value="Available" style={{ background: "#18181b" }}>Disponible</option>
+                      <option value="Occupied" style={{ background: "#18181b" }}>Ocupado</option>
+                      <option value="Maintenance" style={{ background: "#18181b" }}>Mantenimiento</option>
+                    </select>
+                  </Field>
+                )}
+                {/* Renderizado condicional: Si está editando Y elije "Ocupado", elije socio obligatoriamente */}
+                {editingLockerId && formData.status === 'Occupied' && (
+                  <Field label="Asignar Socio (Obligatorio)" required>
+                    <select
+                      value={formData.member_id || ""}
+                      onChange={(e) => setFormData({ ...formData, member_id: e.target.value || null })}
+                      required
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        borderRadius: "6px",
+                        border: "1px solid #3f444e",
+                        background: "#18181b",
+                        color: "white",
+                        fontSize: "14px",
+                        outline: "none"
+                      }}
+                    >
+                      <option value="" style={{ background: "#18181b" }}>-- Seleccionar Socio --</option>
+                      {members.map((member) => (
+                        <option key={member.id} value={member.id} style={{ background: "#18181b" }}>
+                          {member.name} (DNI: {member.dni})
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                )}
               </Stack>
             </DialogBody>
             <DialogFooter>
@@ -227,12 +292,17 @@ export function LockersView() {
                   <Table.ColumnHeader py="4">Número</Table.ColumnHeader>
                   <Table.ColumnHeader py="4">Ubicación</Table.ColumnHeader>
                   <Table.ColumnHeader py="4">Estado</Table.ColumnHeader>
+                  <Table.ColumnHeader py="4">Miembro Asignado</Table.ColumnHeader>
                   <Table.ColumnHeader py="4" textAlign="end">Acciones</Table.ColumnHeader>
                 </Table.Row>
               </Table.Header>
               <Table.Body>
                 {lockers.map((locker) => {
                   const statusInfo = getStatusColor(locker.status);
+                  const assignedMember = members.find(
+                  m => String(m.id).trim() === String(locker.member_id).trim()
+                );
+                console.log(`Locker #${locker.number} - member_id del locker: "${locker.member_id}" | Socio encontrado:`, assignedMember);
                   return (
                   <Table.Row key={locker.id} _hover={{ bg: "bg.muted/30" }}>
                     <Table.Cell fontWeight="bold" color="fg.emphasized">
@@ -252,6 +322,9 @@ export function LockersView() {
                       >
                         {statusInfo.label}
                       </Box>
+                    </Table.Cell>
+                    <Table.Cell>
+                      {assignedMember ? assignedMember.name : "—"}
                     </Table.Cell>
                     <Table.Cell textAlign="end">
                       <HStack gap="2" justify="flex-end">

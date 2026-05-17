@@ -44,6 +44,13 @@ export class PostgresLockerRepository implements LockerRepository {
         return locker ? this.mapToDTO(locker) : null;
     }
 
+    async findByMemberId(memberId: string): Promise<LockerDTO | null> {
+        const locker = await prisma.locker.findFirst({
+            where: { member_id: memberId },
+        });
+        return locker ? this.mapToDTO(locker) : null;
+    }
+
     async findByNumber(number: number): Promise<LockerDTO | null> {
         const locker = await prisma.locker.findUnique({
             where: { number }, // Este es el método clave que usa tu LockerValidator
