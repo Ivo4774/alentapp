@@ -12,7 +12,7 @@ import {
   Center,
   Input
 } from "@chakra-ui/react";
-import { LuPlus, LuRefreshCw, LuBan } from "react-icons/lu";
+import { LuPlus, LuRefreshCw, LuBan, LuCheck, LuTrash2, LuSearch } from "react-icons/lu";
 import { useEffect, useState } from "react";
 import { paymentsService } from "../services/payments";
 import { membersService } from "../services/members";
@@ -37,7 +37,6 @@ import {
   createListCollection 
 } from "../components/ui/select";
 
-// Configuración de los meses para el Selector
 const monthsCollection = createListCollection({
   items: Array.from({ length: 12 }, (_, i) => ({ label: `${i + 1}`, value: `${i + 1}` })),
 });
@@ -48,11 +47,9 @@ export function PaymentsView() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // State for the modal
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form state basado en CreatePaymentRequest
   const [formData, setFormData] = useState<CreatePaymentRequest>({
     amount: 0,
     month: new Date().getMonth() + 1,
@@ -61,7 +58,18 @@ export function PaymentsView() {
     member_id: "",
   });
 
-  // Generamos dinámicamente la lista de socios cargados para el select
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+
+  const statusCollection = createListCollection({
+    items: [
+      { label: "Todos los estados", value: "ALL" },
+      { label: "Pendiente", value: "Pending" },
+      { label: "Pagado", value: "Paid" },
+      { label: "Cancelado", value: "Canceled" },
+    ],
+  });
+
   const membersCollection = createListCollection({
     items: members.map((m) => ({ label: `${m.name} (DNI: ${m.dni})`, value: m.id })),
   });
@@ -70,9 +78,12 @@ export function PaymentsView() {
     setIsLoading(true);
     setError(null);
     try {
-      // Cargamos pagos y miembros de manera simultánea
+      const filters: any = {};
+      if (searchTerm.trim() !== "") filters.query = searchTerm;
+      if (statusFilter !== "" && statusFilter !== "ALL") filters.status = statusFilter;
+
       const [paymentsData, membersData] = await Promise.all([
-        paymentsService.getAll(),
+        paymentsService.getAll(filters),
         membersService.getAll()
       ]);
       setPayments(paymentsData);
@@ -114,16 +125,40 @@ export function PaymentsView() {
     }
   };
 
-  const handleCancelPayment = async (id: string) => {
-    if (window.confirm("¿Estás seguro de que deseas anular este comprobante de pago?")) {
+  const handlePayPayment = async (id: string) => {
+    if (window.confirm("¿Confirmas que el socio realizó el pago efectivo de esta cuota?")) {
       try {
-        await paymentsService.cancel(id);
+        const todayStr = new Date().toISOString().split('T')[0];
+        await paymentsService.pay(id, { payment_date: todayStr });
         fetchData();
       } catch (err: any) {
-        alert(err.message || "Error al anular el pago");
+        alert(err.message || "Error al registrar el cobro");
       }
     }
   };
+
+  const handleCancelPayment = async (id: string) => {
+    const isConfirmed = window.confirm("¿Estás seguro de que deseas anular este comprobante de pago?");
+    if (!isConfirmed) return;
+
+    try {
+      await paymentsService.cancel(id);
+      setPayments((prevPayments) =>
+        prevPayments.map((p) =>
+          p.id === id ? { ...p, status: 'Canceled' as const } : p
+        )
+      );
+    } catch (err: any) {
+      alert(err.message || "Error al anular el pago");
+    }
+  };
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchData();
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm, statusFilter]);
 
   useEffect(() => {
     fetchData();
@@ -154,7 +189,49 @@ export function PaymentsView() {
             </Button>
           </HStack>
         </Flex>
+        {/* Barra de búsqueda */}
+        <Flex gap="4" mt="2" direction={{ base: "column", md: "row" }} width="full">
+          <Box flex="1" maxW={{ md: "md" }}>
+            <Flex align="center" position="relative">
+              <Box position="absolute" left="3" zIndex="1" color="fg.muted">
+                <LuSearch size="18" />
+              </Box>
+              <Input 
+                placeholder="Buscar por socio o DNI..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                size="md"
+                pl="10" 
+                bg="bg.panel"
+                borderRadius="lg"
+                borderWidth="1px"
+                _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px #3182ce" }}
+              />
+            </Flex>
+          </Box>
 
+          <Box width={{ base: "full", md: "240px" }}>
+            <SelectRoot 
+              collection={statusCollection} 
+              value={[statusFilter || "ALL"]}
+              onValueChange={(e) => {
+                const val = e.value[0];
+                setStatusFilter(val === "ALL" ? "" : val);
+              }}
+            >
+              <SelectTrigger bg="bg.panel" borderRadius="lg">
+                <SelectValueText placeholder="Filtrar por estado" />
+              </SelectTrigger>
+              <SelectContent zIndex="1500">
+                {statusCollection.items.map((status) => (
+                  <SelectItem item={status} key={status.value}>
+                    {status.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </SelectRoot>
+          </Box>
+        </Flex>
         {/* Modal para registrar un pago nuevo */}
         <DialogContent>
           <form onSubmit={handleSubmit}>
@@ -271,9 +348,13 @@ export function PaymentsView() {
             </Center>
           ) : payments.length === 0 ? (
             <Center h="300px">
-              <Stack align="center" gap="4">
-                <Text color="fg.muted">No se encontraron registros de cobros o deudas.</Text>
-                <Button variant="ghost" onClick={fetchData}>Reintentar</Button>
+              <Stack align="center" gap="2">
+                <Text color="fg.muted">No se encontraron comprobantes que coincidan con la búsqueda.</Text>
+                {(searchTerm || statusFilter) && (
+                  <Button variant="ghost" size="sm" onClick={() => { setSearchTerm(""); setStatusFilter(""); }}>
+                    Limpiar filtros
+                  </Button>
+                )}
               </Stack>
             </Center>
           ) : (
@@ -316,21 +397,42 @@ export function PaymentsView() {
                         fontSize="xs" 
                         fontWeight="bold"
                       >
-                        {payment.status}
+                        {payment.status === 'Paid' && 'Pagado'}
+                        {payment.status === 'Pending' && 'Pendiente'}
+                        {payment.status === 'Canceled' && 'Anulado'}
                       </Box>
                     </Table.Cell>
                     <Table.Cell textAlign="end">
                       <HStack gap="2" justify="flex-end">
-                        {payment.status !== 'Canceled' && (
-                          <IconButton 
-                            variant="ghost" 
-                            size="sm" 
-                            colorPalette="red"
-                            aria-label="Anular Comprobante"
-                            onClick={() => handleCancelPayment(payment.id)}
-                          >
-                            <LuBan />
-                          </IconButton>
+                        {payment.status === 'Pending' && (
+                          <>
+                            <IconButton 
+                              variant="ghost" 
+                              size="sm" 
+                              colorPalette="green"
+                              aria-label="Registrar Cobro"
+                              onClick={() => handlePayPayment(payment.id)}
+                              title="Registrar Cobro"
+                            >
+                              <LuCheck />
+                            </IconButton>
+
+                            <IconButton 
+                              variant="ghost" 
+                              size="sm" 
+                              colorPalette="red"
+                              aria-label="Anular Comprobante"
+                              onClick={() => handleCancelPayment(payment.id)}
+                              title="Anular Comprobante"
+                            >
+                              <LuTrash2 />
+                            </IconButton>
+                          </>
+                        )}
+                        {payment.status !== 'Pending' && (
+                          <Box as="span" fontSize="xs" color="fg.muted" fontStyle="italic" px="2">
+                            Sin acciones
+                          </Box>
                         )}
                       </HStack>
                     </Table.Cell>
