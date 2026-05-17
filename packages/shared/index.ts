@@ -32,7 +32,9 @@ export interface UpdateMemberRequest {
   status?: MemberStatus;
 }
 
+// ==========================================
 // Payment
+// ==========================================
 export type PaymentStatus = 'Pending' | 'Paid' | 'Canceled';
 
 export interface PaymentDTO {
@@ -56,4 +58,9 @@ export interface CreatePaymentRequest {
 
 export interface PayPaymentRequest {
   payment_date: string;   // ISO Date String (YYYY-MM-DD)
+}
+
+export interface CancelPaymentRequest {
+  // Vacío ya que la anulación lógica solo cambia el status a 'Canceled'
+  // y setea la fecha de pago en null, pero sirve para tipar el controlador.
 }
