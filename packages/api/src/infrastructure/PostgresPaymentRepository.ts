@@ -1,7 +1,7 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/client/client.js'; 
 import { PaymentRepository } from '../domain/PaymentRepository.js';
-import { CreatePaymentRequest, PaymentDTO, PaymentStatus } from '@alentapp/shared';
+import { CreatePaymentRequest, PaymentDTO, PaymentStatus, GetPaymentsQuery } from '@alentapp/shared';
 
 if (!process.env.DATABASE_URL) {
     throw new Error('DATABASE_URL environment variable is not set');
@@ -49,12 +49,36 @@ export class PostgresPaymentRepository implements PaymentRepository {
         return payment ? this.mapToDTO(payment as DBPayment) : null;
     }
 
-    async findAll(): Promise<PaymentDTO[]> {
+    async findAll(filters?: GetPaymentsQuery): Promise<PaymentDTO[]> {
+        const whereClause: any = {};
+
+        if (filters) {
+            if (filters.status) {
+                whereClause.status = filters.status;
+            }
+
+            if (filters.query) {
+                whereClause.OR = [
+                    {
+                        member: {
+                            name: { contains: filters.query, mode: 'insensitive' }
+                        }
+                    },
+                    {
+                        member: {
+                            dni: { contains: filters.query, mode: 'insensitive' }
+                        }
+                    }
+                ];
+            }
+        }
+
         const payments = await prisma.payment.findMany({
+            where: whereClause,
             orderBy: { created_at: 'desc' },
         });
 
-        return payments.map(this.mapToDTO);
+        return (payments as DBPayment[]).map(p => this.mapToDTO(p));
     }
 
     async findByMemberId(memberId: string): Promise<PaymentDTO[]> {
