@@ -7,4 +7,5 @@ export interface PaymentRepository {
   findAll(): Promise<PaymentDTO[]>;
   findByMemberId(memberId: string): Promise<PaymentDTO[]>;
   updateStatus(id: string, status: PaymentStatus, paymentDate: Date): Promise<PaymentDTO>;
+  cancel(id: string): Promise<PaymentDTO>;
 }
