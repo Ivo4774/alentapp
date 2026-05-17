@@ -50,7 +50,7 @@ export class UpdateLockerUseCase {
 
         // Regla: Si pasa a Disponible, nos aseguramos de que se limpie el socio
         let finalData = { ...data };
-        if (finalStatus === 'Available') {
+        if (finalStatus === 'Available'|| finalStatus === 'Maintenance') {
             finalData.member_id = null;
         }
         return await this.lockerRepo.update(id, finalData);

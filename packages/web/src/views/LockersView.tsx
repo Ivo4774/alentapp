@@ -197,7 +197,13 @@ export function LockersView() {
                   <Field label="Estado del Casillero" required>
                     <select
                       value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      onChange={(e) => setFormData({ 
+                          ...formData, 
+                          status: e.target.value,
+                          member_id: e.target.value === 'Occupied' ? formData.member_id : null 
+                        })
+                      
+                      }
                       style={{
                         width: "100%",
                         padding: "10px",
