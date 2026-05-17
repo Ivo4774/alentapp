@@ -7,6 +7,12 @@ import { GetMembersUseCase } from './application/GetMembersUseCase.js';
 import { UpdateMemberUseCase } from './application/UpdateMemberUseCase.js';
 import { DeleteMemberUseCase } from './application/DeleteMemberUseCase.js';
 import { MemberController } from './delivery/MemberController.js';
+import { PostgresMedicalCertificateRepository } from './infrastructure/PostgresMedicalCertificateRepository.js';
+import { CreateMedicalCertificateUseCase } from './application/medical-certificate/CreateMedicalCertificateUseCase.js';
+import { GetMedicalCertificatesUseCase } from './application/medical-certificate/GetMedicalCertificatesUseCase.js';
+import { UpdateMedicalCertificateUseCase } from './application/medical-certificate/UpdateMedicalCertificateUseCase.js';
+import { DeleteMedicalCertificateUseCase } from './application/medical-certificate/DeleteMedicalCertificateUseCase.js';
+import { MedicalCertificateController } from './delivery/MedicalCertificateController.js';
 
 export function buildApp() {
     const server = Fastify({
@@ -23,7 +29,7 @@ export function buildApp() {
 
     server.register(cors, {
         origin: true,
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
         credentials: true,
     });
@@ -43,10 +49,30 @@ export function buildApp() {
         deleteMemberUseCase
     );
 
+    const medicalCertificateRepo = new PostgresMedicalCertificateRepository();
+    
+    const createMedicalCertificateUseCase = new CreateMedicalCertificateUseCase(medicalCertificateRepo);
+    const getMedicalCertificatesUseCase = new GetMedicalCertificatesUseCase(medicalCertificateRepo);
+    const updateMedicalCertificateUseCase = new UpdateMedicalCertificateUseCase(medicalCertificateRepo);
+    const deleteMedicalCertificateUseCase = new DeleteMedicalCertificateUseCase(medicalCertificateRepo);
+
+    const medicalCertificateController = new MedicalCertificateController(
+        createMedicalCertificateUseCase,
+        getMedicalCertificatesUseCase,
+        updateMedicalCertificateUseCase,
+        deleteMedicalCertificateUseCase
+    );
+
     server.get('/api/v1/socios', memberController.getAll.bind(memberController));
     server.post('/api/v1/socios', memberController.create.bind(memberController));
     server.put('/api/v1/socios/:id', memberController.update.bind(memberController));
     server.delete('/api/v1/socios/:id', memberController.delete.bind(memberController));
+
+    server.get('/api/v1/medical-certificates', medicalCertificateController.getAll.bind(medicalCertificateController));
+    server.post('/api/v1/medical-certificates', medicalCertificateController.create.bind(medicalCertificateController));
+    server.get('/api/v1/medical-certificates/member/:memberId', medicalCertificateController.getByMember.bind(medicalCertificateController));
+    server.patch('/api/v1/medical-certificates/:id', medicalCertificateController.update.bind(medicalCertificateController));
+    server.delete('/api/v1/medical-certificates/:id', medicalCertificateController.delete.bind(medicalCertificateController));
 
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
@@ -55,7 +81,6 @@ export function buildApp() {
     return server;
 }
 
-// Solo iniciar el servidor si el script se ejecuta directamente (no cuando es importado por vitest)
 if (process.argv[1] && process.argv[1].endsWith('app.ts')) {
     const server = buildApp();
     const port = parseInt(process.env.PORT || '3000', 10);
