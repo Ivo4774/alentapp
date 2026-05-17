@@ -2,9 +2,10 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { CreatePaymentUseCase } from '../application/payments/NewPaymentUseCase.js';
 import { PayPaymentUseCase } from '../application/payments/UpdatePaymentUseCase.js';
 import { CancelPaymentUseCase } from '../application/payments/DeletePaymentUseCase.js';
+import { GetPaymentsUseCase } from '../application/payments/GetPaymentUseCase.js';
 import { PaymentRepository } from '../domain/PaymentRepository.js';
 import { MemberRepository } from '../domain/MemberRepository.js';
-import { CreatePaymentRequest, PayPaymentRequest } from '@alentapp/shared';
+import { CreatePaymentRequest, PayPaymentRequest, GetPaymentsQuery } from '@alentapp/shared';
 
 export class PaymentController {
   constructor(
@@ -12,10 +13,12 @@ export class PaymentController {
     private readonly memberRepository: MemberRepository
   ) {}
 
-  // Handler para GET /api/v1/payments (Listar todos los pagos)
-  async getAll(request: FastifyRequest, reply: FastifyReply) {
+  // Handler para GET /api/v1/payments (Listar todos los pagos con filtros opcionales)
+  async getAll(request: FastifyRequest<{ Querystring: GetPaymentsQuery }>, reply: FastifyReply) {
     try {
-      const payments = await this.paymentRepository.findAll();
+      const getPaymentsUseCase = new GetPaymentsUseCase(this.paymentRepository);
+      const filterQuery = request.query;
+      const payments = await getPaymentsUseCase.execute(filterQuery);
       return reply.status(200).send({ data: payments });
     } catch (error: any) {
       return reply.status(500).send({ error: error.message || 'Error interno del servidor' });
