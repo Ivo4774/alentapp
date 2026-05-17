@@ -1,5 +1,6 @@
 import { Box, SimpleGrid, Heading, Text, VStack } from "@chakra-ui/react";
 import { LuUsers } from "react-icons/lu";
+import { MdSportsSoccer } from "react-icons/md";
 import { SectionCard } from "../components/SectionCard";
 
 export function HomeView() {
@@ -31,7 +32,13 @@ export function HomeView() {
           icon={LuUsers}
         />
 
-        {/* Future sections can be added here following the same pattern */}
+        <SectionCard 
+          title="Deportes"
+          description="Gestiona las disciplinas deportivas, los cupos disponibles y sus requisitos médicos."
+          to="/sports"
+          icon={MdSportsSoccer}
+        />
+
         <Box 
           p="6" 
           bg="bg.muted/30" 
