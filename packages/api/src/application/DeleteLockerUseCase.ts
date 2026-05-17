@@ -9,6 +9,11 @@ export class DeleteLockerUseCase {
             throw new Error('El casillero no existe');
         }
 
+        // REGLA DEL TDD-0012: Bloquear si está asignado
+        if (existingLocker.member_id || existingLocker.status === 'Occupied') {
+            throw new Error('No se puede eliminar un casillero asignado');
+        }
+
         await this.lockerRepo.delete(id);
     }
 }

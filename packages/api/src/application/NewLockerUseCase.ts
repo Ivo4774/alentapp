@@ -9,8 +9,12 @@ export class CreateLockerUseCase {
     ) {}
 
     async execute(data: CreateLockerRequest): Promise<LockerDTO> {
+        // 0. Validar campos obligatorios según el TDD-0010
+        if (data.number === undefined || data.number === null || !data.location || data.location.trim() === '') {
+            throw new Error('El número y la ubicación son obligatorios');
+        }
+
         // 1. Validaciones de negocio (centralizadas)
-        // Según el TDD-0010: Verificar si el número de casillero ya existe
         await this.lockerValidator.validateNumberIsUnique(data.number);
 
         // 2. Persistencia a través de la interfaz (sin saber qué DB es)
