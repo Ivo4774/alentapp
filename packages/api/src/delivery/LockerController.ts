@@ -1,9 +1,9 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { CreateLockerRequest, UpdateLockerRequest } from '@alentapp/shared'; 
-import { CreateLockerUseCase } from '../application/NewLockerUseCase.js'; 
-import { GetLockersUseCase } from '../application/GetLockersUseCase.js';
-import { UpdateLockerUseCase } from '../application/UpdateLockerUseCase.js'; 
-import { DeleteLockerUseCase } from '../application/DeleteLockerUseCase.js';
+import { CreateLockerUseCase } from '../application/locker/NewLockerUseCase.js'; 
+import { GetLockersUseCase } from '../application/locker/GetLockersUseCase.js';
+import { UpdateLockerUseCase } from '../application/locker/UpdateLockerUseCase.js'; 
+import { DeleteLockerUseCase } from '../application/locker/DeleteLockerUseCase.js';
 
 export class LockerController {
     constructor(

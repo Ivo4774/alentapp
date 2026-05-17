@@ -11,11 +11,11 @@ import { MemberController } from './delivery/MemberController.js';
 //Lockers
 import { PostgresLockerRepository } from './infrastructure/PostgresLockerRepository.js';
 import { LockerValidator } from './domain/services/LockerValidator.js';
-import { CreateLockerUseCase } from './application/NewLockerUseCase.js';
+import { CreateLockerUseCase } from './application/locker/NewLockerUseCase.js';
 import { LockerController } from './delivery/LockerController.js';
-import { UpdateLockerUseCase } from './application/UpdateLockerUseCase.js';
-import { GetLockersUseCase } from './application/GetLockersUseCase.js';
-import { DeleteLockerUseCase } from './application/DeleteLockerUseCase.js';
+import { UpdateLockerUseCase } from './application/locker/UpdateLockerUseCase.js';
+import { GetLockersUseCase } from './application/locker/GetLockersUseCase.js';
+import { DeleteLockerUseCase } from './application/locker/DeleteLockerUseCase.js';
 
 export function buildApp() {
     const server = Fastify({
