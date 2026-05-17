@@ -64,3 +64,8 @@ export interface CancelPaymentRequest {
   // Vacío ya que la anulación lógica solo cambia el status a 'Canceled'
   // y setea la fecha de pago en null, pero sirve para tipar el controlador.
 }
+
+export interface GetPaymentsQuery {
+  query?: string; 
+  status?: PaymentStatus;
+}
