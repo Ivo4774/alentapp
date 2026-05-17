@@ -58,6 +58,7 @@ export function buildApp() {
     server.get('/api/v1/payments', paymentController.getAll.bind(paymentController));
     server.post('/api/v1/payments', paymentController.create.bind(paymentController));
     server.patch('/api/v1/payments/:id/pay', paymentController.pay.bind(paymentController));
+    server.delete('/api/v1/payments/:id', paymentController.cancel.bind(paymentController));
 
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
