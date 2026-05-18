@@ -1,5 +1,6 @@
 import { Box, SimpleGrid, Heading, Text, VStack } from "@chakra-ui/react";
 import { LuUsers } from "react-icons/lu";
+import { MdSportsSoccer } from "react-icons/md";
 import { SectionCard } from "../components/SectionCard";
 
 export function HomeView() {
@@ -36,6 +37,13 @@ export function HomeView() {
           description="Gestiona la aptitud física de los socios, vencimientos y matrículas profesionales."
           to="/medical-certificates"
           icon={LuUsers} 
+        />
+        
+        <SectionCard 
+          title="Deportes"
+          description="Gestiona las disciplinas deportivas, los cupos disponibles y sus requisitos médicos."
+          to="/sports"
+          icon={MdSportsSoccer}
         />
       </SimpleGrid>
     </Box>
