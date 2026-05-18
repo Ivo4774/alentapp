@@ -3,7 +3,7 @@ id: 0009
 estado: Propuesto
 autor: Ivo Alejandro Balduzzi Hojman
 fecha: 2026-04-30
-titulo: Eliminación de Certificado Médico
+titulo: Eliminar Medical Certificate
 ---
 
 # TDD-0009: Eliminación de Certificado Médico
@@ -12,12 +12,12 @@ titulo: Eliminación de Certificado Médico
 
 ### Objetivo
 
-Permitir que los administrativos den de baja definitiva a los registros de certificados médicos que hayan sido cargados por error o que pertenezcan a socios que ya no forman parte de la institución, manteniendo la base de datos limpia y sin basura.
+Permitir que los administrativos den de baja definitiva registros de certificados médicos cargados por error o pertenecientes a socios que ya no forman parte de la institución. Esto asegura que el club mantenga una base de datos íntegra y sin registros obsoletos.
 
 ### User Persona
 
 - **Nombre**: Alberto (Tesorero/Administrativo).
-- **Necesidad**: Borrar un certificado que se subió por error a un socio equivocado o eliminar registros antiguos que ya no tienen relevancia legal para el club.
+- **Necesidad**: Eliminar registros erróneos de forma definitiva para evitar confusiones en la historia clínica del socio.
 
 ### Criterios de Aceptación
 
@@ -25,6 +25,7 @@ Permitir que los administrativos den de baja definitiva a los registros de certi
 - El sistema debe validar que el certificado exista antes de intentar eliminarlo.
 - Se realizará un **borrado físico** (hard delete) de la fila en la tabla correspondiente de PostgreSQL.
 - Una vez confirmada la eliminación, el registro debe desaparecer de la vista del administrador de forma inmediata.
+- La operación exitosa debe responder con un código 204 No Content y sin cuerpo de respuesta.
 
 ## Diseño Técnico (RFC)
 
@@ -34,8 +35,11 @@ Al ser una operación que solo requiere identificar el recurso a destruir, no se
 
 - **Endpoint**: `DELETE /api/v1/medical-certificates/:id`
 - **Request Body**: `None`
-- **Response**: `Empty Body` (Status 204 No Content)
 
+*   **Response Body**:
+```ts
+// 200 OK
+```
 ### Componentes de Arquitectura Hexagonal
 
 1. **Puerto**: `MedicalCertificateRepository` (Método `delete(id)` definido en la capa de Dominio).
@@ -45,11 +49,12 @@ Al ser una operación que solo requiere identificar el recurso a destruir, no se
 
 ## Casos de Borde y Errores
 
-| Escenario | Resultado Esperado | Código HTTP |
-| :--- | :--- | :--- |
-| Certificado ya eliminado o inexistente | Mensaje: "No se encontró el registro a eliminar" | 404 Not Found |
-| Error de conexión con PostgreSQL | Mensaje : "Error interno del servidor, intente más tarde" | 500 Internal Server Error |
-| Intento de borrar sin confirmación | El sistema no debe disparar la petición a la API | N/A |
+| Escenario                          | Resultado Esperado                                                        | Código HTTP               |
+| --------------------------------   | ------------------------------------------------------------------------- | ------------------------- |
+| Formato de ID inválido             | Mensaje: "El ID proporcionado no tiene un formato válido"                 | 400 Bad Request           |
+| Certificado inexistente            | Mensaje: "No se encontró el registro a eliminar"                          | 404 Not Found             |
+| Error de conexión con la BBDD      | Mensaje : "Error interno del servidor, intente más tarde"                 | 500 Internal Server Error |
+| Intento de borrar sin confirmación | El sistema no debe disparar la petición a la API                          | N/A                       |
 
 ## Plan de Implementación
 
