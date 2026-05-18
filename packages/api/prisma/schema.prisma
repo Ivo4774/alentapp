@@ -24,6 +24,12 @@ enum MemberStatus {
     Suspendido
 }
 
+enum LockerStatus {
+    Available
+    Occupied
+    Maintenance
+}
+
 model Member {
     id         String         @id @default(uuid())
     dni        String         @unique
@@ -33,10 +39,24 @@ model Member {
     category   MemberCategory
     status     MemberStatus   @default(Activo)
     created_at DateTime       @default(now())
-    payments     Payment[]
+    lockers    Locker[]
+    payments   Payment[]
     medical_certificates MedicalCertificate[]
 
     @@map("members") // Para que en la DB la tabla se llame 'members' en minúscula
+}
+
+model Locker {
+    id         String       @id @default(uuid())
+    number     Int          @unique
+    location   String
+    status     LockerStatus @default(Available)
+    member_id  String?
+    member     Member?      @relation(fields: [member_id], references: [id])
+    created_at DateTime     @default(now())
+    updated_at DateTime     @updatedAt
+
+    @@map("lockers")
 }
 
 model Payment {
@@ -54,6 +74,7 @@ model Payment {
 
   @@map("payments")
 }
+
 model MedicalCertificate {
     id             String   @id @default(uuid())
     issue_date     DateTime @db.Date
