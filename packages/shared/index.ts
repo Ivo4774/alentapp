@@ -69,3 +69,29 @@ export interface GetPaymentsQuery {
   query?: string; 
   status?: PaymentStatus;
 }
+// ==========================================
+// Medical Certificate
+// ==========================================
+
+export interface MedicalCertificateDTO {
+  id: string;               // UUID
+  issue_date: string;       // ISO 8601: "YYYY-MM-DD"
+  expiry_date: string;      // ISO 8601: "YYYY-MM-DD"
+  doctor_license: string;   // Matrícula profesional
+  is_validated: boolean;    // Estado de vigencia
+  member_id: string;
+}
+
+export interface CreateMedicalCertificateRequest {
+  issue_date: string;
+  expiry_date: string;
+  doctor_license: string;
+  member_id: string;
+}
+
+export interface UpdateMedicalCertificateRequest {
+  issue_date?: string;
+  expiry_date?: string;
+  doctor_license?: string;
+  is_validated?: boolean;
+}

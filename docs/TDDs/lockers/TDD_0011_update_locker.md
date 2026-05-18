@@ -2,64 +2,87 @@
 id: 0011
 estado: En revisión
 autor: Jeronimo Molina
-fecha: 2026-05-01
-titulo: Modificación y Asignación de Casilleros (Locker)
+fecha: 2026-05-09
+titulo: Editar Locker
 ---
 
-# TDD-0011: Modificación y Asignación de Casilleros (Locker)
+
+# TDD-0011: Editar Locker
 
 ## Contexto de Negocio (PRD)
 
 ### Objetivo
-Permitir la edición de los datos de un casillero (número, ubicación, estado) y gestionar su asignación a un socio específico.
+Permitir la modificación de los datos de un casillero (número, ubicación, estado) y gestionar su asignación o desasignación a un socio específico, aplicando restricciones lógicas de estado.
 
 ### User Persona
-* **Nombre**: Maximliano (Administrativo).
-* **Necesidad**: Modificar el estado de un casillero (ej. ponerlo en mantenimiento si se rompe la puerta) o asignarlo a un nuevo socio que lo solicitó.
+* **Nombre**: Maximiliano (Rol: Administrativo / Encargado de Vestuarios)
+* **Necesidad**: Actualizar el estado de un casillero (ej. marcarlo en mantenimiento) o registrar a qué socio se le entregó la llave.
 
-### Criterios de Aceptación
-* El sistema debe permitir actualizar la información del casillero.
-* **Regla de Negocio**: Un casillero no puede asignarse a un socio si su `status` es "Maintenance".
-* El sistema debe prevenir que se asigne un casillero que ya está ocupado sin liberarlo primero.
+### Criterios de Aceptacion
+* El sistema debe permitir actualizar uno o múltiples campos del casillero de forma parcial.
+* Si se modifica el número de casillero, el sistema debe garantizar que el nuevo número no pertenezca a otro existente.
+* El sistema debe bloquear la asignación de un socio (`member_id`) si el casillero se encuentra en estado "Maintenance".
 
-## Diseño Técnico (RFC)
+---
+
+## Diseno Tecnico (RFC)
+
+### Modelo de Datos
+Se utiliza la entidad `Locker`:
+* `id`: String — Identificador unico universal (UUID).
+* `number`: Int — Número identificador del casillero (Único).
+* `location`: String — Ubicación física dentro del club.
+* `status`: String — Estado actual del casillero (Valores: Available | Occupied | Maintenance).
+* `member_id`: String — Relacion con el socio al que pertenece el registro.
 
 ### Contrato de API (@alentapp/shared)
-Actualización parcial de la entidad.
+
 * **Endpoint**: `PATCH /api/v1/lockers/:id`
-* **Request Body** (`UpdateLockerRequest`):
+
+* **Request Body**:
 ```ts
 {
-    number?: number;
-    location?: string;
-    status?: 'Available' | 'Occupied' | 'Maintenance';
-    member_id?: string | null;
+  number?: number,
+  location?: string,
+  status?: 'Available' | 'Occupied' | 'Maintenance',
+  member_id?: string | null
 }
+```
+
+*  **Response Body**:*
+```ts
+{
+  id: string,
+  number: number,
+  location: string,
+  status: 'Available' | 'Occupied' | 'Maintenance',
+  member_id: string | null
+}
+```
 
 ### Componentes de Arquitectura Hexagonal
+*   **Domain**: Entidad Locker e interfaz LockerRepository (Puerto) con el método update necesario para esta operacion.
+*   **Application**: EditLockerUseCase. Orquesta la validación de negocio (verifica que no se asigne un socio si el estado enviado es Maintenance o si ya está en Maintenance) y luego llama al repositorio para actualizar.
+*   **Infrastructure**: PostgresLockerRepository que implementa el puerto usando Prisma, y LockerController que recibe el request HTTP PATCH, extrae los parametros y el body, y delega en el caso de uso.
 
-1. Puerto: LockerRepository (Interface en el Dominio).
-2. Caso de Uso: UpdateLocker (Lógica que valida el estado "Maintenance" y reglas de asignación antes de llamar al repositorio).
-3. Adaptador de Salida: PostgresLockerRepository (Implementación real en BD usando Prisma).
-4. Adaptador de Entrada: LockerController (Ruta HTTP PATCH).
+---
 
 ## Casos de Borde y Errores
 
-| Escenario                      | Resultado Esperado                                           | Código HTTP actual        |
-| ------------------------------ | ------------------------------------------------------------ | ------------------------- |
-| Casillero inexistente          | Mensaje: "El casillero no existe"                            | 404 Not Found             |
-| Asignar si es "Maintenance"    | Mensaje: "No se puede asignar un casillero en mantenimiento" | 400 Bad Request           |
-| Asignar casillero ya ocupado   | Mensaje: "El casillero ya está asignado a otro socio"        | 409 Conflict              |
-| Socio inexistente              | Mensaje: "El socio referenciado no existe"                   | 404 Not Found             |
-| Error de conexión a DB         | Mensaje: error del motor de base de datos                    | 500 Internal Server Error |
-| Modificación exitosa           | Retorna los datos del casillero actualizado                  | 200 OK                    |
+| Escenario | Resultado Esperado | Codigo HTTP |
+| --------- | ------------------ | ----------- |
+| Datos enviados con formato inválido | Mensaje: "Datos de actualización inválidos" | 400 Bad Request |
+| Casillero a editar no existe | Mensaje: "El casillero no existe" | 404 Not Found |
+| Socio a asignar no existe | Mensaje: "El socio referenciado no existe" | 404 Not Found |
+| Asignar socio a casillero en mantenimiento | Mensaje: "No se puede asignar un casillero en mantenimiento" | 409 Conflict |
+| Error de conexion a la base de datos | Mensaje: "Error interno, por favor intente mas tarde" | 500 Internal Server Error |
 
-## Plan de Implementación
+--- 
 
-1. Actualizar las interfaces en el paquete @alentapp/shared (UpdateLockerRequest).
-2. Ampliar el LockerRepository con el método update.
-3. Implementar la lógica en UpdateLockerUseCase utilizando el LockerValidator para bloquear asignaciones indebidas.
-4. Crear la ruta PATCH en el controlador y enlazarla a la app de Fastify.
-5. Consumir el endpoint desde el servicio de Frontend y reutilizar el modal de creación de casilleros para permitir la edición.
-
-
+## Plan de Implementacion
+1.  Definir los tipos `UpdateLockerRequest` en `@alentapp/shared`.
+2.  Actualizar la interfaz `LockerRepository` en la capa de Dominio agregando el metodo update.
+3.  Implementar `EditLockerUseCase` con las validaciones de regla de negocio (bloqueo por mantenimiento).
+4.  Implementar el metodo correspondiente en `PostgresLockerRepository`.
+5.  Crear el endpoint PATCH en `LockerController` y registrarlo en el router de Fastify.
+6.  Integrar la llamada en el Frontend reutilizando el modal de creación y adaptándolo para edición.

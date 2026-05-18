@@ -3,72 +3,81 @@ id: 0014
 estado: Propuesto
 autor: Ariel Cayo
 fecha: 2026-05-01
-titulo: Actualización de Deportes Existentes
+titulo: Editar Sport
 ---
 
-# TDD-0014: Actualización de Deportes Existentes
+# TDD-0014: Editar Sport
 
 ## Contexto de Negocio (PRD)
 
 ### Objetivo
-
 Permitir a los administrativos modificar la información operativa de un deporte existente, respetando estrictamente la regla de inmutabilidad sobre su nombre.
 
 ### User Persona
+* **Nombre**: Ariel (Administrativo)
+* **Necesidad**: Modificar rápidamente la cantidad de cupos disponibles de un deporte o su descripción, sin alterar los registros históricos asociados al nombre.
 
-- Nombre: Ariel (Administrativo).
-- Necesidad: Modificar rápidamente la cantidad de cupos disponibles de un deporte que tiene mucha demanda, sin alterar los registros históricos asociados al nombre.
+### Criterios de Aceptacion
+* El sistema debe impedir la modificación del atributo `name`.
+* El sistema debe validar que el nuevo `max_capacity` (si se envía) sea mayor a cero.
+* El sistema solo permite la edición de `description` y `max_capacity`. Intentos de modificar otros campos serán ignorados.
+* Al finalizar, el sistema debe retornar los nuevos datos actualizados.
 
-### Criterios de Aceptación
+---
 
-- El sistema debe impedir la modificación del atributo name.
-- Lógica de Integridad: Si se modifica el max_capacity, el nuevo valor debe ser mayor a 0 Y mayor o igual a la cantidad de socios ya inscriptos en el deporte.
-- El sistema solo permite la edición de los atributos `description` y `max_capacity`. Cualquier intento de enviar otros campos (como precio) debe ser ignorado o rechazado por el servidor.
-- Si la edición es correcta, debe retornar los nuevos datos actualizados.
-
-## Diseño Técnico (RFC)
+## Diseno Tecnico (RFC)
 
 ### Modelo de Datos
-
-Actualización parcial de campos en la entidad Sport:
-
-- `description`: Cadena de texto (opcional).
-- `max_capacity`: Entero, debe ser mayor a 0 y mayor o igual a los inscriptos actuales (opcional).
+Se actualizarán parcialmente los atributos de la entidad `Sport`:
+* `description`: String — Cadena de texto (opcional).
+* `max_capacity`: Int — Número entero, debe ser mayor a 0 (opcional).
 
 ### Contrato de API (@alentapp/shared)
 
-Se utilizará el paquete compartido para definir el cuerpo de la petición. El campo name se excluye intencionalmente.
+* **Endpoint**: `PATCH /api/v1/sports/:id`
 
-- Endpoint: `PUT /api/v1/sports/:id`
-- Request Body (UpdateSportRequest):
+* **Request Body**:
 ```ts
 {
-    description?: string;
-    max_capacity?: number;
+  description?: string,
+  max_capacity?: number
+}
+```
+
+* **Response Body**:
+```ts
+{
+  id: string,
+  name: string,
+  description: string,
+  max_capacity: number,
+  additional_price: number,
+  requires_medical_certificate: boolean
 }
 ```
 
 ### Componentes de Arquitectura Hexagonal
+* **Domain**: Interfaz `SportRepository` (Puerto) con el método de actualización.
+* **Application**: `UpdateSportUseCase`. Orquesta la validación de la capacidad mínima y garantiza que no se procesen campos inmutables antes de llamar al repositorio.
+* **Infrastructure**: `PostgresSportRepository` que implementa el puerto usando Prisma para hacer un update parcial, y `SportController` que recibe el request HTTP PATCH.
 
-1. Puerto: SportRepository (Método update).
-2. Servicio de Dominio: SportValidator (Asegura exclusión de campos no permitidos y verifica capacidad básica).
-3. Caso de Uso: UpdateSportUseCase (Orquesta validación, consulta inscriptos actuales al repositorio y guarda cambios).
-4. Adaptador de Salida: PostgresSportRepository (Actualización en BD).
-5. Adaptador de Entrada: SportController (Ruta HTTP).
+---
 
 ## Casos de Borde y Errores
 
-| Escenario                    | Resultado Esperado                            | Código HTTP               |
-| ---------------------------- | --------------------------------------------- | ------------------------- |
-| Deporte inexistente          | Mensaje: "El deporte no existe"               | 404 Not Found             |
-| Intento de modificar name    | Mensaje: "El nombre del deporte es inmutable" | 400 Bad Request           |
-| Capacidad en 0 o negativa    | Mensaje: "La nueva capacidad debe ser > 0"    | 400 Bad Request           |
-| Capacidad menor a inscriptos | Mensaje: "Cupo menor a inscriptos actuales"   | 409 Conflict              |
-| Envío de campos no válidos   | Mensaje: "Error de campos extra"    | 400 Bad Request           |
-| Error de conexión a DB       | Mensaje: "Error interno, reintente más tarde" | 500 Internal Server Error |
+| Escenario | Resultado Esperado | Codigo HTTP |
+| --------- | ------------------ | ----------- |
+| Intento de modificar nombre | Mensaje: "El nombre del deporte es inmutable" | 400 Bad Request |
+| Capacidad en 0 o negativa | Mensaje: "La nueva capacidad debe ser mayor a cero" | 400 Bad Request |
+| Deporte inexistente | Mensaje: "El deporte no existe" | 404 Not Found |
+| Error de conexión a la base de datos | Mensaje: "Error interno, por favor intente mas tarde" | 500 Internal Server Error |
 
-## Plan de Implementación
+---
 
-1. Definir UpdateSportRequest en @alentapp/shared excluyendo el campo name y adicionales.
-2. Agregar el caso de uso UpdateSportUseCase en la capa Application, incluyendo la lógica de conteo de inscriptos.
-3. Exponer el endpoint PUT en el controlador para guardar los cambios.
+## Plan de Implementacion
+1.  Definir el tipo `UpdateSportRequest` en `@alentapp/shared`.
+2.  Actualizar la interfaz `SportRepository` en la capa de Dominio añadiendo el método `update`.
+3.  Implementar `UpdateSportUseCase` con la validación de exclusión de campos.
+4.  Implementar el método de actualización parcial en `PostgresSportRepository`.
+5.  Crear el endpoint PATCH en `SportController` y registrarlo en el router de Fastify.
+6.  Integrar la llamada en el Frontend para permitir la edición.
