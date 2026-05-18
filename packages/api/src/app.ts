@@ -7,6 +7,12 @@ import { GetMembersUseCase } from './application/GetMembersUseCase.js';
 import { UpdateMemberUseCase } from './application/UpdateMemberUseCase.js';
 import { DeleteMemberUseCase } from './application/DeleteMemberUseCase.js';
 import { MemberController } from './delivery/MemberController.js';
+import { PostgresSportRepository } from './infrastructure/PostgresSportRepository.js';
+import { CreateSportUseCase } from './application/sports/NewSportUseCase.js';
+import { UpdateSportUseCase } from './application/sports/UpdateSportUseCase.js';
+import { DeleteSportUseCase } from './application/sports/DeleteSportUseCase.js';
+import { SportController } from './delivery/SportController.js';
+import { GetSportsUseCase } from './application/sports/GetSportsUseCase.js';
 
 //Lockers
 import { PostgresLockerRepository } from './infrastructure/PostgresLockerRepository.js';
@@ -66,6 +72,24 @@ export function buildApp() {
     server.put('/api/v1/socios/:id', memberController.update.bind(memberController));
     server.delete('/api/v1/socios/:id', memberController.delete.bind(memberController));
 
+    const sportRepo = new PostgresSportRepository();
+    const createSportUseCase = new CreateSportUseCase(sportRepo);
+    const updateSportUseCase = new UpdateSportUseCase(sportRepo);
+    const deleteSportUseCase = new DeleteSportUseCase(sportRepo);
+    const getSportsUseCase = new GetSportsUseCase(sportRepo);
+
+    const sportController = new SportController(
+        createSportUseCase,
+        getSportsUseCase,
+        updateSportUseCase, 
+        deleteSportUseCase
+    );
+
+    server.get('/api/v1/sports', sportController.getAll.bind(sportController));
+    server.post('/api/v1/sports', sportController.create.bind(sportController));
+    server.patch('/api/v1/sports/:id', sportController.update.bind(sportController));
+    server.delete('/api/v1/sports/:id', sportController.delete.bind(sportController));
+    
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
     });
