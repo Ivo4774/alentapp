@@ -31,6 +31,33 @@ export interface UpdateMemberRequest {
   category?: MemberCategory;
   status?: MemberStatus;
 }
+
+// ==========================================
+// Locker
+// ==========================================
+export type LockerStatus = 'Available' | 'Occupied' | 'Maintenance';
+
+export interface LockerDTO {
+  id: string; // UUID
+  number: number;
+  location: string;
+  status: LockerStatus;
+  member_id: string | null; // UUID del socio asignado, null si está libre
+  created_at: string; // ISO Date String
+  updated_at: string; // ISO Date String
+}
+
+export interface CreateLockerRequest {
+  number: number; // Ingresado manualmente por regla de negocio 
+  location: string;
+}
+
+export interface UpdateLockerRequest {
+  number?: number;
+  location?: string;
+  status?: LockerStatus;
+  member_id?: string | null;
+}
 // ==========================================
 // Medical Certificate
 // ==========================================
