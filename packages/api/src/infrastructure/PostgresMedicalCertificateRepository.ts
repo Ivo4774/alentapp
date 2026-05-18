@@ -59,7 +59,7 @@ export class PostgresMedicalCertificateRepository implements MedicalCertificateR
 
     async findAll(): Promise<MedicalCertificateDTO[]> {
         const certs = await prisma.medicalCertificate.findMany({
-            orderBy: { create_at: 'desc' }
+            orderBy: { created_at: 'desc' }
         });
         return certs.map((cert) => this.mapToDTO(cert));
     }
