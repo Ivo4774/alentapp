@@ -3,7 +3,7 @@ id: 0008
 estado: Propuesto
 autor: Ivo Alejandro Balduzzi Hojman
 fecha: 2026-04-30
-titulo: Actualización de Certificado Médico
+titulo: Editar Certificado Médico
 ---
 
 # TDD_0008_update_medical_certificate: Actualización de Certificado Médico
@@ -11,17 +11,16 @@ titulo: Actualización de Certificado Médico
 ## Contexto de Negocio (PRD)
 
 ### Objetivo
-Permitir que el personal administrativo pueda corregir errores en la carga o actualizar la información de un certificado médico (como la matrícula del profesional o las fechas de vigencia) sin necesidad de eliminar el registro, asegurando que la historia clínica del socio en el sistema sea siempre precisa.
+Permitir que el personal administrativo pueda corregir errores en la carga o actualizar la información de un certificado médico (como la matrícula del profesional o las fechas de vigencia) sin necesidad de eliminar el registro, asegurando que la historia clínica del socio en el sistema sea siempre precisa y actualizada.
 
 ### User Persona
 *   **Nombre**: Alberto (Tesorero/Administrativo)
-*   **Necesidad**: Modificar datos de los certificados rápidamente desde el panel de gestión. Por ejemplo, corregir un error de tipeo en la matrícula del médico o revalidar un certificado cargado previamente que fue invalidado por error.
-
+*   **Necesidad**:Modificar datos de los certificados rápidamente desde el panel de gestión para corregir errores de tipeo o revalidar certificados invalidados por error.
 ### Criterios de Aceptación
 *   El sistema debe permitir la actualización parcial de los campos: `issue_date`, `expiry_date`, `doctor_license` e `is_validated`.
-*   El sistema debe validar que la nueva fecha de vencimiento sea posterior a la de emisión.
+*   El sistema debe validar que la nueva fecha de vencimiento (expiry_date) sea posterior a la de emisión (issue_date).
 *   Si se actualiza un certificado para que sea el vigente (`is_validated: true`), el sistema debe invalidar automáticamente cualquier otro certificado que pertenezca a ese mismo socio.
-*   Al finalizar la edición, el sistema debe devolver el objeto con todos los datos actualizados.
+*   Ante una operación exitosa, el sistema debe retornar los datos actualizados con un código 200 OK.
 
 ## Diseño Técnico (RFC)
 
@@ -37,14 +36,26 @@ Se trabajará sobre la entidad `MedicalCertificate`:
 ### Contrato de API (@alentapp/shared)
 Todos los campos son opcionales para permitir la actualización parcial del recurso.
 
-*   **Endpoint**: `PUT /api/v1/medical-certificates/:id`
+*   **Endpoint**: `PATCH /api/v1/medical-certificates/:id`
 *   **Request Body**:
 ```ts
 {
-  issue_date?: string,
-  expiry_date?: string,
-  doctor_license?: string,
-  is_validated?: boolean
+  issue_date?: string,     // ISO 8601: "YYYY-MM-DD"
+  expiry_date?: string,    // ISO 8601: "YYYY-MM-DD"
+  doctor_license?: string, // Matrícula profesional
+  is_validated?: boolean   // Estado de vigencia
+}
+```
+*   **Response Body**:
+```ts
+// 200 OK
+{
+  id: string,
+  issue_date: string,
+  expiry_date: string,
+  doctor_license: string,
+  is_validated: boolean,
+  member_id: string
 }
 ```
 

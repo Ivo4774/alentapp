@@ -1,56 +1,84 @@
 ---
 id: 0005
-estado: Pendiente
+estado: Propuesto
 autor: Pieroni María Belén
 fecha: 2026-04-30
-titulo: Registrar Cobro de Pago
+titulo: Editar Payment
 ---
 
-# TDD_0005_update_payment: Registrar Pago
+# TDD-0005: Editar Payment
 
 ## Contexto de Negocio (PRD)
 
 ### Objetivo
-Registrar el ingreso efectivo de dinero al club cuando un socio abona una cuota previamente generada.
+Registrar el ingreso efectivo de dinero al club cuando un socio abona una cuota previamente generada. El objetivo es actualizar el estado del pago a `Paid` y dejar constancia de la fecha exacta en que se realizo la transaccion.
 
 ### User Persona
-*   **Nombre**: Juan (Tesorero/Administrativo)
-*   **Necesidad**: Marcar una cuota como pagada al recibir el dinero, dejando constancia de la fecha exacta de la transacción.
+*   **Nombre**: Juan (Tesorero / Administrativo)
+*   **Necesidad**: Marcar una cuota como pagada al recibir el dinero, dejando constancia de la fecha exacta de la transaccion.
 
-### Criterios de Aceptación
-*   Solo se pueden actualizar pagos que estén en estado "Pendiente".
-*   Al registrar el cobro, el estado debe cambiar a "Pagado".
-*   Se debe capturar la `fecha_pago` de forma obligatoria para este proceso.
+### Criterios de Aceptacion
+*   Solo se pueden actualizar pagos que esten en estado `Pending`.
+*   Al registrar el cobro, el estado debe cambiar automaticamente a `Paid`.
+*   El campo `payment_date` es obligatorio para esta operacion.
+*   Un pago con estado `Paid` o `Canceled` no puede volver a ser procesado.
+*   Al finalizar, el sistema debe retornar el objeto del pago actualizado con todos sus campos.
 
-## Diseño Técnico (RFC)
+---
+
+## Diseno Tecnico (RFC)
 
 ### Modelo de Datos
-Actualización de campos en la entidad `Payment`:
-*   `estado`: Cambio de "Pendiente" a "Pagado".
-*   `fecha_pago`: DateTime (Actualizado con la fecha del cobro).
+Actualizacion parcial sobre la entidad `Payment`:
+*   `status`: String — Transicion de `Pending` a `Paid`. Valores permitidos: `Pending` | `Paid` | `Canceled`.
+*   `payment_date`: Date — Fecha en que se efectuo el cobro. Obligatorio en esta operacion. *(DateTime en Prisma / string ISO 8601 en la API)*
 
 ### Contrato de API (@alentapp/shared)
 *   **Endpoint**: `PATCH /api/v1/payments/:id/pay`
 *   **Request Body**:
 ```ts
 {
-    "fecha_pago": "string (ISO Date)"
+  payment_date: string    // ISO 8601: "YYYY-MM-DD"
+}
+```
+*   **Response Body**:
+```ts
+// PATCH → 200 OK
+{
+  id: string,
+  amount: number,
+  month: number,
+  year: number,
+  status: string,         // "Paid"
+  due_date: string,       // ISO 8601: "YYYY-MM-DD"
+  payment_date: string,   // ISO 8601: "YYYY-MM-DD"
+  member_id: string
 }
 ```
 
 ### Componentes de Arquitectura Hexagonal
-*   **Domain**: Regla de negocio: Un pago "Anulado" o "Pagado" no puede volver a ser procesado.
-*   **Application**: `PagarPaymentUseCase`. Recupera la entidad, aplica la lógica de transición de estado y guarda cambios.
-*   **Infrastructure**: Endpoint en `PaymentController` y método `update` en el repositorio.
+*   **Domain**: Interfaz `PaymentRepository` (Puerto) con el metodo `updateStatus`. La regla de negocio establece que un pago con estado `Paid` o `Canceled` no puede volver a ser procesado.
+*   **Application**: `PayPaymentUseCase`. Recupera el pago por `id`, valida que el estado actual sea `Pending`, actualiza el estado a `Paid` con la `payment_date` recibida y persiste los cambios.
+*   **Infrastructure**: `PostgresPaymentRepository` que implementa el metodo `updateStatus` usando Prisma, y `PaymentController` que extrae el `id` de la URL y el body del request y delega en el caso de uso.
+
+---
 
 ## Casos de Borde y Errores
-| Escenario                   | Resultado Esperado                            | Código HTTP               |
-| ----------------------------| --------------------------------------------- | ------------------------- |
-| Pago ya estaba pagado       | Error: "El pago ya ha sido procesado"         | 409 Conflict              |
-| Pago está anulado           | Error: "No se puede pagar un registro anulado"| 409 Conflict              |
-| ID de pago inexistente      | Error: "Pago no encontrado"                   | 404 Not Found             |
 
-## Plan de Implementación
-1. Agregar el caso de uso `PagarPaymentUseCase` en la capa Application.
-2. Implementar la validación de estados en la entidad de dominio.
-3. Exponer el endpoint PATCH en el controlador.
+| Escenario | Resultado Esperado | Codigo HTTP |
+| --------- | ------------------ | ----------- |
+| Campo `payment_date` faltante en el body | Mensaje: "La fecha de pago es obligatoria" | 400 Bad Request |
+| `id` de pago no existe en la base de datos | Mensaje: "Pago no encontrado" | 404 Not Found |
+| Pago ya tiene estado `Paid` | Mensaje: "El pago ya fue registrado como pagado" | 409 Conflict |
+| Pago tiene estado `Canceled` | Mensaje: "No se puede pagar un registro cancelado" | 409 Conflict |
+| Error de conexion a la base de datos | Mensaje: "Error interno, por favor intente mas tarde" | 500 Internal Server Error |
+
+---
+
+## Plan de Implementacion
+1.  Actualizar los tipos en `@alentapp/shared` para incluir `PayPaymentRequest` y verificar que `PaymentResponse` contemple `payment_date`.
+2.  Agregar el metodo `updateStatus` a la interfaz `PaymentRepository` en la capa de Dominio si no existe.
+3.  Implementar `PayPaymentUseCase` con la validacion de transicion de estado (`Pending` → `Paid`).
+4.  Implementar el metodo `updateStatus` en `PostgresPaymentRepository`.
+5.  Crear el endpoint `PATCH /payments/:id/pay` en `PaymentController` y registrarlo en el router de Fastify.
+6.  Integrar la llamada en el Frontend y actualizar la vista de pagos para reflejar el nuevo estado.

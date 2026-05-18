@@ -34,7 +34,7 @@ function Layout() {
                             </Text>
                         </RouterLink>
                         <RouterLink to="/medical-certificates">
-                            <Text 
+                          <Text 
                                 fontWeight="semibold" 
                                 fontSize="sm" 
                                 textTransform="uppercase" 
@@ -43,6 +43,18 @@ function Layout() {
                                 _hover={{ color: "blue.500", textDecoration: "none" }}
                             >
                                 Certificados Médicos
+                            </Text>
+                        </RouterLink>
+                        <RouterLink to="/lockers">
+                            <Text 
+                                fontWeight="semibold" 
+                                fontSize="sm" 
+                                textTransform="uppercase" 
+                                letterSpacing="wider"
+                                color="fg.muted"
+                                _hover={{ color: "blue.500", textDecoration: "none" }}
+                            >
+                                Lockers
                             </Text>
                         </RouterLink>
                     </HStack>

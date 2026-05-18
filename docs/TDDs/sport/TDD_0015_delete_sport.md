@@ -3,64 +3,62 @@ id: 0015
 estado: Propuesto
 autor: Ariel Cayo
 fecha: 2026-05-01
-titulo: Eliminación de Deportes Existentes
+titulo: Eliminar Sport
 ---
 
-# TDD-0015: Eliminación de Deportes Existentes
+# TDD-0015: Eliminar Sport
 
 ## Contexto de Negocio (PRD)
 
 ### Objetivo
-
-Dar de baja una disciplina deportiva. Para proteger la integridad histórica, el sistema solo permitirá el borrado si no existen registros de inscripción (Enrollment) asociados, garantizando que no se pierda la trazabilidad de la facturación de los socios.
+Dar de baja una disciplina deportiva del catálogo del club, eliminándola permanentemente del sistema si ya no se ofrece.
 
 ### User Persona
+* **Nombre**: Ariel (Administrativo)
+* **Necesidad**: Eliminar un deporte obsoleto o mal cargado de la grilla. Requiere una advertencia visual en la interfaz antes de borrar para no cometer equivocaciones.
 
-- Nombre: Ariel (Administrativo).
-- Necesidad: Eliminar un deporte obsoleto de la grilla. Requiere una advertencia visual antes de borrar para no cometer equivocaciones.
+### Criterios de Aceptacion
+* El sistema debe validar que el deporte exista antes de intentar borrarlo.
+* El sistema debe realizar un borrado físico (hard delete) de la base de datos.
+* La operación debe responder sin contenido en el body de éxito.
 
-### Criterios de Aceptación
+---
 
-- El sistema debe pedir una confirmación explícita antes de proceder con el borrado.
-- El sistema debe validar que el deporte exista antes de intentar borrarlo.
-- Regla de Negocio: El sistema no puede eliminar un deporte que tenga inscriptos porque se considera en uso, el sistema debe rechazar la eliminación si existen registros en la entidad Enrollment asociados al deporte.
-- El sistema debe realizar un borrado físico de la base de datos solo si pasa las validaciones anteriores.
-- Si el borrado es exitoso, la tabla en el frontend debe actualizarse automáticamente.
-
-## Diseño Técnico (RFC)
+## Diseno Tecnico (RFC)
 
 ### Modelo de Datos
-
-Eliminación física del registro en la tabla Sport mediante su identificador.
-
-- `id`: Identificador único universal (UUID).
+Eliminación física del registro en la tabla `Sport` mediante su identificador. No se altera la estructura, solo se actúa sobre:
+* `id`: String — Identificador único universal (UUID).
 
 ### Contrato de API (@alentapp/shared)
 
-Al tratarse de una operación destructiva, no se envía cuerpo en la petición HTTP.
+* **Endpoint**: `DELETE /api/v1/sports/:id`
 
-- Endpoint: `DELETE /api/v1/sports/:id`
-- Request Body: None
-- Response: 204 No Content en caso de éxito.
+* **Request Body**:
+*(No Necesario)*
+
+* **Response Body**:
+*(No aplica - 204 No Content - Se relizo con exito pero no hay nada para mostrar)*
 
 ### Componentes de Arquitectura Hexagonal
+* **Domain**: Interfaz `SportRepository` (Puerto) con el método `delete`.
+* **Application**: `DeleteSportUseCase`. Verifica la existencia del recurso previo al borrado.
+* **Infrastructure**: `PostgresSportRepository` que ejecuta la eliminación en BD, y `SportController` que maneja el request HTTP DELETE.
 
-1. Puerto: SportRepository (Método delete).
-2. Caso de Uso: DeleteSportUseCase (Comprueba existencia previa, verifica la tabla de Enrollments y delega la eliminación).
-3. Adaptador de Salida: PostgresSportRepository (Eliminación en BD).
-4. Adaptador de Entrada: SportController (Ruta HTTP que devuelve status 204).
+---
 
 ## Casos de Borde y Errores
 
-| Escenario                  | Resultado Esperado                            | Código HTTP               |
-| -------------------------- | --------------------------------------------- | ------------------------- |
-| Deporte inexistente        | Mensaje: "El deporte no existe"               | 404 Not Found             |
-| Deporte con inscriptos     | Mensaje: "No se puede borrar deporte en uso"  | 409 Conflict              |
-| Error de conexión a DB     | Mensaje: "Error interno, reintente más tarde" | 500 Internal Server Error |
-| Eliminación exitosa        | Respuesta vacía                               | 204 No Content            |
+| Escenario | Resultado Esperado | Codigo HTTP |
+| --------- | ------------------ | ----------- |
+| Deporte inexistente | Mensaje: "El deporte no existe" | 404 Not Found |
+| Error de conexión a la base de datos | Mensaje: "Error interno, por favor intente mas tarde" | 500 Internal Server Error |
 
-## Plan de Implementación
+---
 
-1. Implementar DeleteSportUseCase en la capa Application verificando relaciones.
-2. Asegurar que el adaptador de infraestructura realice el borrado físico (DELETE) en la base de datos.
-3. Exponer el endpoint DELETE en el controlador.
+## Plan de Implementacion
+1.  Actualizar la interfaz `SportRepository` en la capa de Dominio con el método `delete`.
+2.  Implementar `DeleteSportUseCase` para manejar la existencia previa del recurso.
+3.  Implementar el borrado físico (`delete` de Prisma) en `PostgresSportRepository`.
+4.  Crear el endpoint DELETE en `SportController` (retornando status 204) y registrarlo en Fastify.
+5.  Implementar el borrado en el Frontend, agregando confirmación visual antes de disparar el endpoint.
