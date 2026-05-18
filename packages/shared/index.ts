@@ -32,8 +32,34 @@ export interface UpdateMemberRequest {
   status?: MemberStatus;
 }
 
-// Locker
+// ==========================================
+// Sport
+// ==========================================
+export interface SportDTO{
+  id: String; //UUID
+  name: string;
+  description: string;
+  max_capacity: Number;
+  aditional_price: Number;
+  requires_medical_certificate: boolean;
+  created_at?: string;
+}
 
+export interface CreateSportRequest {
+  name: string;
+  description: string;
+  max_capacity: number;
+  additional_price: number;
+  requires_medical_certificate: boolean;
+}
+
+export interface UpdateSportRequest {
+  description?: string;
+  max_capacity?: number;
+}
+// ==========================================
+// Locker
+// ==========================================
 export type LockerStatus = 'Available' | 'Occupied' | 'Maintenance';
 
 export interface LockerDTO {
@@ -56,4 +82,30 @@ export interface UpdateLockerRequest {
   location?: string;
   status?: LockerStatus;
   member_id?: string | null;
+}
+// ==========================================
+// Medical Certificate
+// ==========================================
+
+export interface MedicalCertificateDTO {
+  id: string;               // UUID
+  issue_date: string;       // ISO 8601: "YYYY-MM-DD"
+  expiry_date: string;      // ISO 8601: "YYYY-MM-DD"
+  doctor_license: string;   // Matrícula profesional
+  is_validated: boolean;    // Estado de vigencia
+  member_id: string;
+}
+
+export interface CreateMedicalCertificateRequest {
+  issue_date: string;
+  expiry_date: string;
+  doctor_license: string;
+  member_id: string;
+}
+
+export interface UpdateMedicalCertificateRequest {
+  issue_date?: string;
+  expiry_date?: string;
+  doctor_license?: string;
+  is_validated?: boolean;
 }
