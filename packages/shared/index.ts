@@ -69,6 +69,58 @@ export interface GetPaymentsQuery {
   query?: string; 
   status?: PaymentStatus;
 }
+  
+// ==========================================
+// Sport
+// ==========================================
+export interface SportDTO{
+  id: String; //UUID
+  name: string;
+  description: string;
+  max_capacity: Number;
+  aditional_price: Number;
+  requires_medical_certificate: boolean;
+  created_at?: string;
+}
+
+export interface CreateSportRequest {
+  name: string;
+  description: string;
+  max_capacity: number;
+  additional_price: number;
+  requires_medical_certificate: boolean;
+}
+
+export interface UpdateSportRequest {
+  description?: string;
+  max_capacity?: number;
+}
+// ==========================================
+// Locker
+// ==========================================
+export type LockerStatus = 'Available' | 'Occupied' | 'Maintenance';
+
+export interface LockerDTO {
+  id: string; // UUID
+  number: number;
+  location: string;
+  status: LockerStatus;
+  member_id: string | null; // UUID del socio asignado, null si está libre
+  created_at: string; // ISO Date String
+  updated_at: string; // ISO Date String
+}
+
+export interface CreateLockerRequest {
+  number: number; // Ingresado manualmente por regla de negocio 
+  location: string;
+}
+
+export interface UpdateLockerRequest {
+  number?: number;
+  location?: string;
+  status?: LockerStatus;
+  member_id?: string | null;
+}
 // ==========================================
 // Medical Certificate
 // ==========================================
