@@ -33,6 +33,8 @@ model Member {
     category   MemberCategory
     status     MemberStatus   @default(Activo)
     created_at DateTime       @default(now())
+    payments     Payment[]
+    medical_certificates MedicalCertificate[]
 
     @@map("members") // Para que en la DB la tabla se llame 'members' en minúscula
 }
@@ -47,4 +49,33 @@ model Sport {
     created_at          DateTime @default(now())
     
     @@map("sports")
+}
+
+model Payment {
+    id           String    @id @default(uuid())
+    amount       Float
+    month        Int
+    year         Int
+    status       String    @default("Pending")
+    due_date     DateTime
+    payment_date DateTime?
+    member_id    String
+    created_at   DateTime       @default(now())
+
+    member       Member    @relation(fields: [member_id], references: [id])
+
+  @@map("payments")
+}
+
+model MedicalCertificate {
+    id             String   @id @default(uuid())
+    issue_date     DateTime @db.Date
+    expiry_date    DateTime @db.Date
+    doctor_license String
+    is_validated   Boolean  @default(true)
+    member_id      String
+    member         Member   @relation(fields: [member_id], references: [id])
+    file_data      String?
+    created_at      DateTime @default(now())
+    @@map("medical_certificates")
 }
