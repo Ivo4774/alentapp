@@ -33,28 +33,18 @@ export function HomeView() {
         />
 
         <SectionCard 
+          title="Certificados Médicos"
+          description="Gestiona la aptitud física de los socios, vencimientos y matrículas profesionales."
+          to="/medical-certificates"
+          icon={LuUsers} 
+        />
+        
+        <SectionCard 
           title="Deportes"
           description="Gestiona las disciplinas deportivas, los cupos disponibles y sus requisitos médicos."
           to="/sports"
           icon={MdSportsSoccer}
         />
-
-        <Box 
-          p="6" 
-          bg="bg.muted/30" 
-          borderRadius="2xl" 
-          borderWidth="1px" 
-          borderColor="border.subtle"
-          borderStyle="dashed"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          minH="250px"
-        >
-          <VStack>
-            <Text color="fg.muted" fontWeight="medium">Próximamente nuevas secciones</Text>
-          </VStack>
-        </Box>
       </SimpleGrid>
     </Box>
   );
