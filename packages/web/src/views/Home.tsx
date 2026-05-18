@@ -1,5 +1,5 @@
 import { Box, SimpleGrid, Heading, Text, VStack } from "@chakra-ui/react";
-import { LuUsers } from "react-icons/lu";
+import { LuUsers, LuCreditCard } from "react-icons/lu";
 import { MdSportsSoccer } from "react-icons/md";
 import { SectionCard } from "../components/SectionCard";
 
@@ -33,6 +33,13 @@ export function HomeView() {
         />
 
         <SectionCard 
+          title="Tesorería y Pagos"
+          description="Registra nuevas cuotas, controla deudas de los socios, realiza cobros y cancelaciones."
+          to="/payments"
+          icon={LuCreditCard}
+        />
+          
+        <SectionCard 
           title="Certificados Médicos"
           description="Gestiona la aptitud física de los socios, vencimientos y matrículas profesionales."
           to="/medical-certificates"
@@ -44,6 +51,13 @@ export function HomeView() {
           description="Gestiona las disciplinas deportivas, los cupos disponibles y sus requisitos médicos."
           to="/sports"
           icon={MdSportsSoccer}
+        />
+        
+        <SectionCard 
+          title="Casilleros"
+          description="Gestionar los lockers de los miembros."
+          to="/lockers"
+          icon={LuUsers}
         />
       </SimpleGrid>
     </Box>
