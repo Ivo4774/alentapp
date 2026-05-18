@@ -36,11 +36,11 @@ export interface UpdateMemberRequest {
 // Sport
 // ==========================================
 export interface SportDTO{
-  id: String; //UUID
+  id: string; //UUID
   name: string;
   description: string;
-  max_capacity: Number;
-  aditional_price: Number;
+  max_capacity: number;
+  additional_price: number;
   requires_medical_certificate: boolean;
   created_at?: string;
 }
@@ -57,6 +57,7 @@ export interface UpdateSportRequest {
   description?: string;
   max_capacity?: number;
 }
+
 // ==========================================
 // Locker
 // ==========================================
@@ -83,10 +84,10 @@ export interface UpdateLockerRequest {
   status?: LockerStatus;
   member_id?: string | null;
 }
+
 // ==========================================
 // Medical Certificate
 // ==========================================
-
 export interface MedicalCertificateDTO {
   id: string;               // UUID
   issue_date: string;       // ISO 8601: "YYYY-MM-DD"
