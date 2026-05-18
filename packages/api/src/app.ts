@@ -7,6 +7,12 @@ import { GetMembersUseCase } from './application/GetMembersUseCase.js';
 import { UpdateMemberUseCase } from './application/UpdateMemberUseCase.js';
 import { DeleteMemberUseCase } from './application/DeleteMemberUseCase.js';
 import { MemberController } from './delivery/MemberController.js';
+
+//Payment
+import { PostgresPaymentRepository } from './infrastructure/PostgresPaymentRepository.js';
+import { PaymentController } from './delivery/PaymentController.js';
+import { PrismaClient } from './generated/client/index.js';
+
 // Medical-certificate
 import { PostgresMedicalCertificateRepository } from './infrastructure/PostgresMedicalCertificateRepository.js';
 import { CreateMedicalCertificateUseCase } from './application/medical-certificate/CreateMedicalCertificateUseCase.js';
@@ -59,8 +65,7 @@ export function buildApp() {
     const getMembersUseCase = new GetMembersUseCase(memberRepo);
     const updateMemberUseCase = new UpdateMemberUseCase(memberRepo, memberValidator);
     const deleteMemberUseCase = new DeleteMemberUseCase(memberRepo);
-
-    // --- INSTANCIAS DE LOCKER ---
+  
     const lockerRepo = new PostgresLockerRepository();
     const lockerValidator = new LockerValidator(lockerRepo);
     const createLockerUseCase = new CreateLockerUseCase(lockerRepo, lockerValidator);
@@ -76,6 +81,8 @@ export function buildApp() {
         deleteMemberUseCase
     );
 
+    const paymentRepo = new PostgresPaymentRepository();
+    const paymentController = new PaymentController(paymentRepo, memberRepo);
     const medicalCertificateRepo = new PostgresMedicalCertificateRepository();
     
     const createMedicalCertificateUseCase = new CreateMedicalCertificateUseCase(medicalCertificateRepo);
@@ -89,18 +96,7 @@ export function buildApp() {
         updateMedicalCertificateUseCase,
         deleteMedicalCertificateUseCase
     );
-
-    server.get('/api/v1/socios', memberController.getAll.bind(memberController));
-    server.post('/api/v1/socios', memberController.create.bind(memberController));
-    server.put('/api/v1/socios/:id', memberController.update.bind(memberController));
-    server.delete('/api/v1/socios/:id', memberController.delete.bind(memberController));
-
-    server.get('/api/v1/medical-certificates', medicalCertificateController.getAll.bind(medicalCertificateController));
-    server.post('/api/v1/medical-certificates', medicalCertificateController.create.bind(medicalCertificateController));
-    server.get('/api/v1/medical-certificates/member/:memberId', medicalCertificateController.getByMember.bind(medicalCertificateController));
-    server.patch('/api/v1/medical-certificates/:id', medicalCertificateController.update.bind(medicalCertificateController));
-    server.delete('/api/v1/medical-certificates/:id', medicalCertificateController.delete.bind(medicalCertificateController));
-
+  
     const sportRepo = new PostgresSportRepository();
     const createSportUseCase = new CreateSportUseCase(sportRepo);
     const updateSportUseCase = new UpdateSportUseCase(sportRepo);
@@ -113,21 +109,37 @@ export function buildApp() {
         updateSportUseCase, 
         deleteSportUseCase
     );
+  
+
+    server.get('/api/v1/socios', memberController.getAll.bind(memberController));
+    server.post('/api/v1/socios', memberController.create.bind(memberController));
+    server.put('/api/v1/socios/:id', memberController.update.bind(memberController));
+    server.delete('/api/v1/socios/:id', memberController.delete.bind(memberController));
+
+    server.get('/api/v1/payments', paymentController.getAll.bind(paymentController));
+    server.post('/api/v1/payments', paymentController.create.bind(paymentController));
+    server.patch('/api/v1/payments/:id/pay', paymentController.pay.bind(paymentController));
+    server.delete('/api/v1/payments/:id', paymentController.cancel.bind(paymentController));
+
+    server.get('/api/v1/medical-certificates', medicalCertificateController.getAll.bind(medicalCertificateController));
+    server.post('/api/v1/medical-certificates', medicalCertificateController.create.bind(medicalCertificateController));
+    server.get('/api/v1/medical-certificates/member/:memberId', medicalCertificateController.getByMember.bind(medicalCertificateController));
+    server.patch('/api/v1/medical-certificates/:id', medicalCertificateController.update.bind(medicalCertificateController));
+    server.delete('/api/v1/medical-certificates/:id', medicalCertificateController.delete.bind(medicalCertificateController));
 
     server.get('/api/v1/sports', sportController.getAll.bind(sportController));
     server.post('/api/v1/sports', sportController.create.bind(sportController));
     server.patch('/api/v1/sports/:id', sportController.update.bind(sportController));
     server.delete('/api/v1/sports/:id', sportController.delete.bind(sportController));
-    
-    server.get('/', async (req, rep) => {
-        rep.status(200).send({ msg: 'asd' })
-    });
-
-    // --- RUTAS DE LOCKER ---
+  
     server.get('/api/v1/lockers', lockerController.getAll.bind(lockerController));
     server.post('/api/v1/lockers', lockerController.create.bind(lockerController));
     server.patch('/api/v1/lockers/:id', lockerController.update.bind(lockerController));
     server.delete('/api/v1/lockers/:id', lockerController.delete.bind(lockerController));
+    
+    server.get('/', async (req, rep) => {
+        rep.status(200).send({ msg: 'asd' })
+    });
 
     return server;
 }
