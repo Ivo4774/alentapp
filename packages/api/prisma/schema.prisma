@@ -24,6 +24,12 @@ enum MemberStatus {
     Suspendido
 }
 
+enum LockerStatus {
+    Available
+    Occupied
+    Maintenance
+}
+
 model Member {
     id         String         @id @default(uuid())
     dni        String         @unique
@@ -33,9 +39,52 @@ model Member {
     category   MemberCategory
     status     MemberStatus   @default(Activo)
     created_at DateTime       @default(now())
+    lockers    Locker[]
+    payments   Payment[]
     medical_certificates MedicalCertificate[]
 
     @@map("members") // Para que en la DB la tabla se llame 'members' en minúscula
+}
+
+model Sport {
+    id                  String @id @default(uuid())
+    name                String @unique
+    description         String 
+    max_capacity        Int
+    additional_price    Float
+    requires_medical_certificate Boolean @default(false)
+    created_at          DateTime @default(now())
+    
+    @@map("sports")
+}
+
+model Locker {
+    id         String       @id @default(uuid())
+    number     Int          @unique
+    location   String
+    status     LockerStatus @default(Available)
+    member_id  String?
+    member     Member?      @relation(fields: [member_id], references: [id])
+    created_at DateTime     @default(now())
+    updated_at DateTime     @updatedAt
+
+    @@map("lockers")
+}
+
+model Payment {
+    id           String    @id @default(uuid())
+    amount       Float
+    month        Int
+    year         Int
+    status       String    @default("Pending")
+    due_date     DateTime
+    payment_date DateTime?
+    member_id    String
+    created_at   DateTime       @default(now())
+
+    member       Member    @relation(fields: [member_id], references: [id])
+
+  @@map("payments")
 }
 
 model MedicalCertificate {
@@ -46,6 +95,7 @@ model MedicalCertificate {
     is_validated   Boolean  @default(true)
     member_id      String
     member         Member   @relation(fields: [member_id], references: [id])
-
+    file_data      String?
+    created_at      DateTime @default(now())
     @@map("medical_certificates")
 }
