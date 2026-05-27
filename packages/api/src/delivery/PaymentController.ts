@@ -5,6 +5,7 @@ import { CancelPaymentUseCase } from '../application/payments/DeletePaymentUseCa
 import { GetPaymentsUseCase } from '../application/payments/GetPaymentUseCase.js';
 import { PaymentRepository } from '../domain/PaymentRepository.js';
 import { MemberRepository } from '../domain/MemberRepository.js';
+import { PaymentValidator } from '../domain/services/PaymentValidator.js';
 import { CreatePaymentRequest, PayPaymentRequest, GetPaymentsQuery } from '@alentapp/shared';
 
 export class PaymentController {
@@ -25,12 +26,14 @@ export class PaymentController {
     }
   }
 
-  // Handler para POST /api/v1/payments (Crear un pago)
+  // 1. Handler para POST /api/v1/payments (Crear un pago)
   async create(request: FastifyRequest<{ Body: CreatePaymentRequest }>, reply: FastifyReply) {
     try {
+      const paymentValidator = new PaymentValidator(this.paymentRepository, this.memberRepository);
+      
       const createPaymentUseCase = new CreatePaymentUseCase(
         this.paymentRepository,
-        this.memberRepository
+        paymentValidator
       );
 
       const newPayment = await createPaymentUseCase.execute(request.body);
@@ -39,7 +42,8 @@ export class PaymentController {
       if (
         error.message === 'Faltan campos obligatorios' || 
         error.message === 'El monto debe ser mayor a cero' || 
-        error.message === 'El mes debe estar entre 1 y 12'
+        error.message === 'El mes debe estar entre 1 y 12' ||
+        error.message === 'La fecha de vencimiento no puede ser menor al período de referencia'
       ) {
         return reply.status(400).send({ error: error.message });
       }
@@ -53,12 +57,10 @@ export class PaymentController {
   }
 
   // 2. Handler para PATCH /api/v1/payments/:id/pay (Registrar Pago Efectivo)
-  async pay(
-    request: FastifyRequest<{ Params: { id: string }; Body: PayPaymentRequest }>, 
-    reply: FastifyReply
-  ) {
+  async pay(request: FastifyRequest<{ Params: { id: string }; Body: PayPaymentRequest }>, reply: FastifyReply) {
     try {
-      const payPaymentUseCase = new PayPaymentUseCase(this.paymentRepository);
+      const paymentValidator = new PaymentValidator(this.paymentRepository, this.memberRepository);
+      const payPaymentUseCase = new PayPaymentUseCase(this.paymentRepository, paymentValidator);
 
       const { id } = request.params;
       const updatedPayment = await payPaymentUseCase.execute(id, request.body);
@@ -68,46 +70,38 @@ export class PaymentController {
       if (error.message === 'La fecha de pago es obligatoria') {
         return reply.status(400).send({ error: error.message });
       }
-
       if (error.message === 'Pago no encontrado') {
         return reply.status(404).send({ error: error.message });
       }
-
       if (
         error.message === 'El pago ya fue registrado como pagado' || 
         error.message === 'No se puede pagar un registro cancelado'
       ) {
         return reply.status(409).send({ error: error.message });
       }
-
       return reply.status(500).send({ error: 'Error interno, por favor intente mas tarde' });
     }
   }
 
-// 3. Handler para DELETE /api/v1/payments/:id/cancel (Anular Pago)
-  async cancel(
-    request: FastifyRequest<{ Params: { id: string } }>,
-    reply: FastifyReply
-  ) {
+  // 3. Handler para DELETE /api/v1/payments/:id/cancel (Anular Pago)
+  async cancel(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     try {
-      const cancelPaymentUseCase = new CancelPaymentUseCase(this.paymentRepository);
+      const paymentValidator = new PaymentValidator(this.paymentRepository, this.memberRepository);
+      const cancelPaymentUseCase = new CancelPaymentUseCase(this.paymentRepository, paymentValidator);
       const { id } = request.params;
 
       await cancelPaymentUseCase.execute(id);
-      
       return reply.status(204).send(); 
     } catch (error: any) {
       if (error.message === 'Pago no encontrado') {
         return reply.status(404).send({ error: error.message });
       }
-
       if (
         error.message === 'No se puede anular un pago ya pagado' ||
         error.message === 'El pago ya ha sido anulado'
       ) {
         return reply.status(409).send({ error: error.message });
       }
-
       return reply.status(400).send({ error: error.message || 'Error al procesar la anulación' });
     }
   }
