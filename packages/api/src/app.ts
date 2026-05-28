@@ -10,7 +10,7 @@ import { MemberController } from './delivery/MemberController.js';
 
 //Payment
 import { PostgresPaymentRepository } from './infrastructure/PostgresPaymentRepository.js';
-import { PaymentController } from './delivery/PaymentController.js';
+import { PaymentController } from './delivery/payments/PaymentController.js';
 import { PrismaClient } from './generated/client/index.js';
 
 // Medical-certificate
