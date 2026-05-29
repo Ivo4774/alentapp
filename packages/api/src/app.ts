@@ -20,7 +20,7 @@ import { CreateMedicalCertificateUseCase } from './application/medical-certifica
 import { GetMedicalCertificatesUseCase } from './application/medical-certificate/GetMedicalCertificatesUseCase.js';
 import { UpdateMedicalCertificateUseCase } from './application/medical-certificate/UpdateMedicalCertificateUseCase.js';
 import { DeleteMedicalCertificateUseCase } from './application/medical-certificate/DeleteMedicalCertificateUseCase.js';
-import { MedicalCertificateController } from './delivery/MedicalCertificateController.js';
+import { MedicalCertificateController } from './delivery/medical-certificate/MedicalCertificateController.js';
 
 //Sport
 import { PostgresSportRepository } from './infrastructure/PostgresSportRepository.js';
