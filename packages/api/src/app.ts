@@ -23,6 +23,7 @@ import { MedicalCertificateController } from './delivery/MedicalCertificateContr
 
 //Sport
 import { PostgresSportRepository } from './infrastructure/PostgresSportRepository.js';
+import { SportValidator } from './domain/services/SportValidator.js';
 import { CreateSportUseCase } from './application/sports/NewSportUseCase.js';
 import { UpdateSportUseCase } from './application/sports/UpdateSportUseCase.js';
 import { DeleteSportUseCase } from './application/sports/DeleteSportUseCase.js';
@@ -98,8 +99,9 @@ export function buildApp() {
     );
   
     const sportRepo = new PostgresSportRepository();
-    const createSportUseCase = new CreateSportUseCase(sportRepo);
-    const updateSportUseCase = new UpdateSportUseCase(sportRepo);
+    const sportValidator = new SportValidator(sportRepo);
+    const createSportUseCase = new CreateSportUseCase(sportRepo, sportValidator);
+    const updateSportUseCase = new UpdateSportUseCase(sportRepo, sportValidator);
     const deleteSportUseCase = new DeleteSportUseCase(sportRepo);
     const getSportsUseCase = new GetSportsUseCase(sportRepo);
 
