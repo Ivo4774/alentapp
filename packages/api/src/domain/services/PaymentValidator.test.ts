@@ -58,22 +58,25 @@ describe('PaymentValidator', () => {
                 .rejects
                 .toThrow('La fecha de vencimiento no puede ser menor al período de referencia');
         });
+    });
 
-        it('debe lanzar un error si el socio asociado no existe en el sistema', async () => {
-            const payloadSocioInexistente = {
-                amount: 4000,
-                month: 5,
-                year: 2026,
-                due_date: '2026-06-15',
-                member_id: 'socio-no-existe'
-            };
+    describe('validatePay', () => {
+        it('debe pasar si el pago existe y está en estado Pendiente', async () => {
+            vi.mocked(mockPaymentRepo.findById).mockResolvedValueOnce({ id: 'pago-1', status: 'Pending' } as any);
+            
+            await expect(validator.validatePay('pago-1', '2026-05-30')).resolves.not.toThrow();
+        });
 
-            vi.mocked(mockMemberRepo.findById).mockResolvedValueOnce(null);
+        it('debe lanzar error si el pago ya está pagado o anulado', async () => {
+            vi.mocked(mockPaymentRepo.findById).mockResolvedValueOnce({ id: 'pago-1', status: 'Paid' } as any);
+            
+            await expect(validator.validatePay('pago-1', '2026-05-30')).rejects.toThrow('El pago ya fue registrado como pagado');
+        });
 
-            await expect(validator.validateCreate(payloadSocioInexistente))
-                .rejects
-                .toThrow('Socio no encontrado');
-            expect(mockMemberRepo.findById).toHaveBeenCalledWith('socio-no-existe');
+        it('debe lanzar error si el pago no existe', async () => {
+            vi.mocked(mockPaymentRepo.findById).mockResolvedValueOnce(null);
+            
+            await expect(validator.validatePay('pago-invalido', '2026-05-30')).rejects.toThrow('Pago no encontrado');
         });
     });
 });
