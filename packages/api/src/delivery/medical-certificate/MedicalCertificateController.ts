@@ -1,8 +1,8 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { CreateMedicalCertificateUseCase } from '../application/medical-certificate/CreateMedicalCertificateUseCase.js';
-import { GetMedicalCertificatesUseCase } from '../application/medical-certificate/GetMedicalCertificatesUseCase.js';
-import { UpdateMedicalCertificateUseCase } from '../application/medical-certificate/UpdateMedicalCertificateUseCase.js';
-import { DeleteMedicalCertificateUseCase } from '../application/medical-certificate/DeleteMedicalCertificateUseCase.js';
+import { CreateMedicalCertificateUseCase } from '../../application/medical-certificate/CreateMedicalCertificateUseCase.js';
+import { GetMedicalCertificatesUseCase } from '../../application/medical-certificate/GetMedicalCertificatesUseCase.js';
+import { UpdateMedicalCertificateUseCase } from '../../application/medical-certificate/UpdateMedicalCertificateUseCase.js';
+import { DeleteMedicalCertificateUseCase } from '../../application/medical-certificate/DeleteMedicalCertificateUseCase.js';
 import { CreateMedicalCertificateRequest, UpdateMedicalCertificateRequest } from '@alentapp/shared';
 
 export class MedicalCertificateController {
@@ -25,8 +25,6 @@ export class MedicalCertificateController {
     async getByMember(request: FastifyRequest<{ Params: { memberId: string } }>, reply: FastifyReply) {
         try {
             const { memberId } = request.params;
-            // La validación del formato del ID se resolverá internamente si el caso de uso la expone,
-            // o el controlador maneja el flujo directo delegando la lógica.
             const certs = await this.getUseCase.execute(memberId);
             return reply.status(200).send({ data: certs });
         } catch (error: any) {
@@ -45,7 +43,6 @@ export class MedicalCertificateController {
             const cert = await this.createUseCase.execute(request.body);
             return reply.status(201).send({ data: cert });
         } catch (error: any) {
-            // Atrapamos los errores de validación del Backend (Validator/UseCase) para responder 400 o 404
             if (
                 error.message.includes('obligatoria') || 
                 error.message.includes('formato válido') || 
