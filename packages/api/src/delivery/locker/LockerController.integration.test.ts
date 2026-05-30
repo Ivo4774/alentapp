@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { FastifyInstance } from 'fastify';
 // Ajustá la ruta según dónde esté tu app.js
-import { buildApp } from '../app.js'; 
+import { buildApp } from '../../app.js'; 
 
 // Mockeamos el repositorio igual que en Members para probar la integración de toda la capa HTTP
-vi.mock('../infrastructure/PostgresLockerRepository.js', () => {
+vi.mock('../../infrastructure/PostgresLockerRepository.js', () => {
     return {
         PostgresLockerRepository: class {
             async findByNumber(number: number) {
@@ -19,7 +19,7 @@ vi.mock('../infrastructure/PostgresLockerRepository.js', () => {
     };
 });
 
-vi.mock('../infrastructure/PostgresMemberRepository.js', () => {
+vi.mock('../../infrastructure/PostgresMemberRepository.js', () => {
     return {
         PostgresMemberRepository: class {
             // No necesitamos simular métodos complejos acá porque solo estamos testeando lockers,
@@ -28,7 +28,7 @@ vi.mock('../infrastructure/PostgresMemberRepository.js', () => {
     };
 });
 
-vi.mock('../infrastructure/PostgresPaymentRepository.js', () => {
+vi.mock('../../infrastructure/PostgresPaymentRepository.js', () => {
     return {
         PostgresPaymentRepository: class {
             // Mock vacío para que la app no pida la BD al cargar el módulo de pagos
@@ -36,13 +36,13 @@ vi.mock('../infrastructure/PostgresPaymentRepository.js', () => {
     };
 });
 
-vi.mock('../infrastructure/PostgresSportRepository.js', () => {
+vi.mock('../../infrastructure/PostgresSportRepository.js', () => {
     return {
         PostgresSportRepository: class {}
     };
 });
 
-vi.mock('../infrastructure/PostgresMedicalCertificateRepository.js', () => {
+vi.mock('../../infrastructure/PostgresMedicalCertificateRepository.js', () => {
     return {
         PostgresMedicalCertificateRepository: class {}
     };

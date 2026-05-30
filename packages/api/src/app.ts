@@ -35,7 +35,7 @@ import { GetSportsUseCase } from './application/sports/GetSportsUseCase.js';
 import { PostgresLockerRepository } from './infrastructure/PostgresLockerRepository.js';
 import { LockerValidator } from './domain/services/LockerValidator.js';
 import { CreateLockerUseCase } from './application/locker/NewLockerUseCase.js';
-import { LockerController } from './delivery/LockerController.js';
+import { LockerController } from './delivery/locker/LockerController.js';
 import { UpdateLockerUseCase } from './application/locker/UpdateLockerUseCase.js';
 import { GetLockersUseCase } from './application/locker/GetLockersUseCase.js';
 import { DeleteLockerUseCase } from './application/locker/DeleteLockerUseCase.js';
