@@ -27,7 +27,7 @@ import { SportValidator } from './domain/services/SportValidator.js';
 import { CreateSportUseCase } from './application/sports/NewSportUseCase.js';
 import { UpdateSportUseCase } from './application/sports/UpdateSportUseCase.js';
 import { DeleteSportUseCase } from './application/sports/DeleteSportUseCase.js';
-import { SportController } from './delivery/SportController.js';
+import { SportController } from './delivery/sports/SportController.js';
 import { GetSportsUseCase } from './application/sports/GetSportsUseCase.js';
 
 //Lockers
@@ -43,12 +43,12 @@ export function buildApp() {
     const server = Fastify({
         logger: {
             level: 'info',
-            transport: process.env.NODE_ENV === 'development' 
-            ? {
-                target: 'pino-pretty',
-                options: { translateTime: 'HH:MM:ss Z', ignore: 'pid,hostname' },
-                } 
-            : undefined,
+            transport: process.env.NODE_ENV === 'development'
+                ? {
+                    target: 'pino-pretty',
+                    options: { translateTime: 'HH:MM:ss Z', ignore: 'pid,hostname' },
+                }
+                : undefined,
         },
     });
 
@@ -61,12 +61,12 @@ export function buildApp() {
 
     const memberRepo = new PostgresMemberRepository();
     const memberValidator = new MemberValidator(memberRepo);
-    
+
     const createMemberUseCase = new CreateMemberUseCase(memberRepo, memberValidator);
     const getMembersUseCase = new GetMembersUseCase(memberRepo);
     const updateMemberUseCase = new UpdateMemberUseCase(memberRepo, memberValidator);
     const deleteMemberUseCase = new DeleteMemberUseCase(memberRepo);
-  
+
     const lockerRepo = new PostgresLockerRepository();
     const lockerValidator = new LockerValidator(lockerRepo);
     const createLockerUseCase = new CreateLockerUseCase(lockerRepo, lockerValidator);
@@ -76,7 +76,7 @@ export function buildApp() {
     const lockerController = new LockerController(createLockerUseCase, getLockersUseCase, updateLockerUseCase, deleteLockerUseCase);
 
     const memberController = new MemberController(
-        createMemberUseCase, 
+        createMemberUseCase,
         getMembersUseCase,
         updateMemberUseCase,
         deleteMemberUseCase
@@ -85,7 +85,7 @@ export function buildApp() {
     const paymentRepo = new PostgresPaymentRepository();
     const paymentController = new PaymentController(paymentRepo, memberRepo);
     const medicalCertificateRepo = new PostgresMedicalCertificateRepository();
-    
+
     const createMedicalCertificateUseCase = new CreateMedicalCertificateUseCase(medicalCertificateRepo);
     const getMedicalCertificatesUseCase = new GetMedicalCertificatesUseCase(medicalCertificateRepo);
     const updateMedicalCertificateUseCase = new UpdateMedicalCertificateUseCase(medicalCertificateRepo);
@@ -97,7 +97,7 @@ export function buildApp() {
         updateMedicalCertificateUseCase,
         deleteMedicalCertificateUseCase
     );
-  
+
     const sportRepo = new PostgresSportRepository();
     const sportValidator = new SportValidator(sportRepo);
     const createSportUseCase = new CreateSportUseCase(sportRepo, sportValidator);
@@ -108,10 +108,10 @@ export function buildApp() {
     const sportController = new SportController(
         createSportUseCase,
         getSportsUseCase,
-        updateSportUseCase, 
+        updateSportUseCase,
         deleteSportUseCase
     );
-  
+
 
     server.get('/api/v1/socios', memberController.getAll.bind(memberController));
     server.post('/api/v1/socios', memberController.create.bind(memberController));
@@ -133,12 +133,12 @@ export function buildApp() {
     server.post('/api/v1/sports', sportController.create.bind(sportController));
     server.patch('/api/v1/sports/:id', sportController.update.bind(sportController));
     server.delete('/api/v1/sports/:id', sportController.delete.bind(sportController));
-  
+
     server.get('/api/v1/lockers', lockerController.getAll.bind(lockerController));
     server.post('/api/v1/lockers', lockerController.create.bind(lockerController));
     server.patch('/api/v1/lockers/:id', lockerController.update.bind(lockerController));
     server.delete('/api/v1/lockers/:id', lockerController.delete.bind(lockerController));
-    
+
     server.get('/', async (req, rep) => {
         rep.status(200).send({ msg: 'asd' })
     });
