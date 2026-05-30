@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-// Forzamos el modo serial para que corran en orden en el mismo worker, igual que el diseño del profe
+// Forzamos el modo serial para que corran en orden en el mismo worker,
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Medical Certificates Full-Stack E2E - Suite Completa', () => {
@@ -51,31 +51,27 @@ test.describe('Medical Certificates Full-Stack E2E - Suite Completa', () => {
   });
 
   // =========================================================================
-  // SCENARIO 2: MODIFICACIÓN / EDICIÓN (Nuevo requerimiento de la Rama 2)
+  // SCENARIO 2: MODIFICACIÓN / EDICIÓN (requerimiento de la Rama 2)
   // =========================================================================
   test('2. Debe permitir editar la matrícula del profesional del certificado creado y ver el cambio en la tabla', async ({ page }) => {
     await page.goto('http://localhost:5173/medical-certificates');
 
-    // Buscamos la fila específica del socio creado en el paso anterior para asegurar aislamiento
+
     const targetRow = page.getByRole('row', { name: uniqueMemberName });
     await expect(targetRow).toBeVisible({ timeout: 10000 });
 
-    // Hacemos clic en el botón de edición usando su aria-label nativo de Chakra UI
     await targetRow.getByRole('button', { name: /Editar Certificado/i }).click();
 
-    // Verificamos el cambio dinámico del título del modal de edición
     await expect(page.getByText('Editar Certificado Médico')).toBeVisible();
 
-    // Modificamos el campo de la matrícula profesional con el placeholder exacto
     await page.getByPlaceholder('Ej. MN 123456').fill(updatedLicense);
 
-    // Guardamos los cambios presionando el botón submit modificado ("Guardar Cambios")
+
     await page.getByRole('button', { name: 'Guardar Cambios' }).click();
     await expect(page.getByRole('button', { name: 'Guardar Cambios' })).toBeHidden();
 
-    // Validamos el impacto visual en tiempo real dentro de la grilla
     await expect(targetRow.getByText(updatedLicense)).toBeVisible({ timeout: 10000 });
-    // Verificamos analíticamente que la matrícula vieja ya no se renderice en esa fila
+
     await expect(targetRow.getByText(originalLicense)).toBeHidden();
   });
 
