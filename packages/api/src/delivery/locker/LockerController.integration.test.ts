@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { FastifyInstance } from 'fastify';
-// Ajustá la ruta según dónde esté tu app.js
 import { buildApp } from '../../app.js'; 
 
 // Mockeamos el repositorio igual que en Members para probar la integración de toda la capa HTTP
@@ -22,8 +21,7 @@ vi.mock('../../infrastructure/PostgresLockerRepository.js', () => {
 vi.mock('../../infrastructure/PostgresMemberRepository.js', () => {
     return {
         PostgresMemberRepository: class {
-            // No necesitamos simular métodos complejos acá porque solo estamos testeando lockers,
-            // esto solo sirve para que la app no intente conectarse a la BD al arrancar.
+            
         }
     };
 });
@@ -95,7 +93,7 @@ describe('Locker API Integration Tests - Alta (POST /api/v1/lockers)', () => {
             payload
         });
 
-        // Verificamos que rebote (generalmente tu controlador lanzará un 400 o 409)
+        
         expect(response.statusCode).toBeGreaterThanOrEqual(400);
         const body = JSON.parse(response.payload);
         expect(body.error).toBe('El número de casillero ya se encuentra registrado');
