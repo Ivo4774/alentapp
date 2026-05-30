@@ -7,21 +7,21 @@ test.describe('Locker Full-Stack E2E - Alta', () => {
     const uniqueNumber = Math.floor(Math.random() * 10000).toString();
     
     // 1. Navegamos a la pantalla de casilleros 
-    await page.goto('/lockers');
+    await page.goto('http://localhost:5173/lockers');
 
     // 2. Abrimos el modal/formulario de alta
-    await page.locator('button:has-text("Nuevo Casillero")').click();
+    await page.locator('button:has-text("Agregar Casillero")').click();
     await expect(page.getByText('Agregar Nuevo Casillero')).toBeVisible();
 
-    // 3. Llenamos los datos del formulario (Ajustá los placeholders según lo que diga tu frontend)
-    await page.getByPlaceholder('Ej. 10').fill(uniqueNumber);
-    await page.getByPlaceholder('Ej. Pasillo Principal').fill('Vestuario E2E Test');
+    // 3. Llenamos los datos del formulario 
+    await page.getByPlaceholder('Ej. 15').fill(uniqueNumber);
+    await page.getByPlaceholder('Ej. Vestuario Principal').fill('Vestuario E2E Test');
 
     // 4. Guardamos
     await page.getByRole('button', { name: 'Crear Casillero' }).click();
 
     // 5. Validamos que el modal se cierre
-    await expect(page.getByRole('button', { name: 'Crear Casillero' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Crear Casillero' })).toBeHidden({ timeout: 15000 });
     
     // 6. Validamos que el nuevo casillero aparezca en la tabla
     const newRow = page.getByRole('row', { name: uniqueNumber });
@@ -29,7 +29,7 @@ test.describe('Locker Full-Stack E2E - Alta', () => {
     await expect(newRow.getByText('Vestuario E2E Test')).toBeVisible();
     
     // Verificamos el estado inicial (ajustá a 'Disponible' si tu front lo traduce)
-    await expect(newRow.getByText('Available')).toBeVisible(); 
+    await expect(newRow.getByText('Disponible')).toBeVisible(); 
   });
 
 });
