@@ -179,4 +179,52 @@ describe('Payment API Integration Tests - Alta', () => {
             expect(response.statusCode).toBe(404);
         });
     });
+
+    // Test para Cancelar/Anular Pago (DELETE)
+    describe('DELETE /api/v1/payments/:id', () => {
+        it('debe retornar 204 si se anula correctamente', async () => {
+            vi.spyOn(PostgresPaymentRepository.prototype, 'cancel').mockResolvedValue({ 
+                id: 'pago-1', 
+                status: 'Canceled' 
+            } as any);
+
+            const response = await app.inject({
+                method: 'DELETE',
+                url: '/api/v1/payments/pago-1' 
+            });
+
+            expect(response.statusCode).toBe(204);
+            expect(response.payload).toBe('');
+        });
+
+        it('debe retornar 404 si el pago a anular no existe', async () => {
+            vi.spyOn(PostgresPaymentRepository.prototype, 'cancel').mockRejectedValue(new Error('Pago no encontrado'));
+
+            const response = await app.inject({
+                method: 'DELETE',
+                url: '/api/v1/payments/pago-inexistente'
+            });
+
+            expect(response.statusCode).toBe(404);
+            const body = JSON.parse(response.payload);
+            expect(body.error).toBe('Pago no encontrado');
+        });
+
+        it('debe retornar 409 si el pago ya está pagado', async () => {
+            vi.spyOn(PostgresPaymentRepository.prototype, 'findById').mockResolvedValueOnce({ 
+                id: 'pago-pagado', 
+                status: 'Paid' 
+            } as any);
+            vi.spyOn(PostgresPaymentRepository.prototype, 'cancel').mockRejectedValue(new Error('No se puede anular un pago ya pagado'));
+
+            const response = await app.inject({
+                method: 'DELETE',
+                url: '/api/v1/payments/pago-pagado'
+            });
+
+            expect(response.statusCode).toBe(409);
+            const body = JSON.parse(response.payload);
+            expect(body.error).toBe('No se puede anular un pago ya pagado');
+        });
+    });
 });
