@@ -1,8 +1,12 @@
 import { UpdateSportRequest, SportDTO } from '@alentapp/shared';
 import { SportRepository } from '../../domain/SportRepository.js';
+import { SportValidator } from '../../domain/services/SportValidator.js';
 
 export class UpdateSportUseCase {
-    constructor(private readonly sportRepo: SportRepository) {}
+    constructor(
+        private readonly sportRepo: SportRepository,
+        private readonly sportValidator: SportValidator
+    ) {}
 
     async execute(id: string, data: any): Promise<SportDTO> {
         
@@ -11,13 +15,8 @@ export class UpdateSportUseCase {
             throw new Error('El deporte no existe');
         }
 
-        if (data.name && data.name !== existingSport.name) {
-            throw new Error('El nombre del deporte es inmutable');
-        }
-
-        if (data.max_capacity !== undefined && data.max_capacity <= 0) {
-            throw new Error('La nueva capacidad debe ser mayor a cero');
-        }
+        this.sportValidator.validateNameUnchanged(data.name, existingSport.name);
+        this.sportValidator.validateUpdateCapacity(data.max_capacity);
 
         const cleanData: UpdateSportRequest = {
             description: data.description ?? existingSport.description,

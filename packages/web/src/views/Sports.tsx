@@ -199,13 +199,13 @@ export function SportsView() {
                 
                 {!editingSportId && (
                   <>
-                    <Field label="Precio Adicional ($)" required>
+                    <Field label="Precio Adicional ($)">
                       <Input 
                         type="number"
                         min="0"
                         step="0.01"
                         placeholder="0 si está incluido en la cuota" 
-                        value={formData.additional_price}
+                        value={formData.additional_price === 0 ? "" : formData.additional_price}
                         onChange={(e) => {
                           const val = e.target.value;
                           setFormData({ ...formData, additional_price: val === "" ? 0 : Number(val) });
@@ -215,7 +215,6 @@ export function SportsView() {
                             e.target.select();
                           }
                         }}
-                        required
                       />
                     </Field>
                     <Field label="Certificado Médico" required>
