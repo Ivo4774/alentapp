@@ -8,7 +8,7 @@ vi.mock('../infrastructure/PostgresSportRepository.js', () => {
     return {
         PostgresSportRepository: class {
             async findAll() { return []; }
-            async findById(id: string) { return null; }
+            async findById(id: string) { return id === '1' ? { id: '1', name: 'Original', description: 'Vieja', max_capacity: 10 } : null; }
             async findByName(name: string) { return name === 'Natacion' ? { id: '1', name: 'Natacion' } : null; }
             async create(data: any) { return { id: '2', ...data, created_at: new Date().toISOString() }; }
             async update(id: string, data: any) { return { id, ...data }; }
@@ -69,6 +69,35 @@ describe('Sport API Integration Tests - Creación', () => {
             expect(response.statusCode).toBe(409);
             const body = JSON.parse(response.payload);
             expect(body.error).toBe('Ya existe un deporte con ese nombre');
+        });
+    });
+
+    describe('PATCH /api/v1/sports/:id', () => {
+        it('debe retornar 200 y actualizar el deporte con un payload válido', async () => {
+            const payload = { description: 'Nueva', max_capacity: 50 };
+            const response = await app.inject({
+                method: 'PATCH',
+                url: '/api/v1/sports/1',
+                payload
+            });
+
+            expect(response.statusCode).toBe(200);
+            const body = JSON.parse(response.payload);
+            expect(body.data.description).toBe('Nueva');
+            expect(body.data.max_capacity).toBe(50);
+        });
+
+        it('debe retornar 400 si se intenta cambiar el nombre', async () => {
+            const payload = { name: 'Cambiado' };
+            const response = await app.inject({
+                method: 'PATCH',
+                url: '/api/v1/sports/1',
+                payload
+            });
+
+            expect(response.statusCode).toBe(400);
+            const body = JSON.parse(response.payload);
+            expect(body.error).toBe('El nombre del deporte es inmutable');
         });
     });
 });
