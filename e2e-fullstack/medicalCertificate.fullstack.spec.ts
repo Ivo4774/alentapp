@@ -7,16 +7,16 @@ test.describe('Medical Certificates Full-Stack E2E - Suite Completa', () => {
   const uniqueSuffix = Date.now().toString();
   const uniqueMemberName = `Socio E2E Modif ${uniqueSuffix}`;
   const uniqueDni = Math.floor(Math.random() * 89999999 + 10000000).toString();
-  
+
   const originalLicense = Math.floor(Math.random() * 499999 + 100000).toString();
   const updatedLicense = Math.floor(Math.random() * 500000 + 500000).toString();
 
   // =========================================================================
-  // SCENARIO 1: ALTA / CREACIÓN (Rama 1)
+  // SCENARIO 1: ALTA / CREACIÓN
   // =========================================================================
   test('1. Debe cargar un certificado médico real y mostrarlo validado en el listado', async ({ page }) => {
     // Creación del socio requisito
-    await page.goto('http://localhost:5173/members');
+    await page.goto('/members');
     await page.locator('button:has-text("Agregar Miembro")').click();
     await page.getByPlaceholder('Ej. Juan Pérez').fill(uniqueMemberName);
     await page.getByPlaceholder('Ej. 12345678').fill(uniqueDni);
@@ -26,15 +26,15 @@ test.describe('Medical Certificates Full-Stack E2E - Suite Completa', () => {
     await expect(page.getByRole('button', { name: 'Crear Miembro' })).toBeHidden();
 
     // Alta del certificado
-    await page.goto('http://localhost:5173/medical-certificates');
+    await page.goto('/medical-certificates');
     await page.getByRole('button', { name: /Cargar Certificado/i }).click();
     await page.getByRole('combobox', { name: /Seleccionar Socio/i }).click();
     await page.getByRole('option', { name: new RegExp(uniqueMemberName, 'i') }).click();
-    
+
     await page.getByPlaceholder('Ej. MN 123456').fill(originalLicense);
     await page.getByLabel(/Fecha de Emisión/i).fill('2026-05-01');
     await page.getByLabel(/Fecha de Vencimiento/i).fill('2026-12-31');
-    
+
     await page.locator('input[type="file"]').setInputFiles({
       name: 'comprobante_aptitud_e2e.png',
       mimeType: 'image/png',
@@ -43,17 +43,17 @@ test.describe('Medical Certificates Full-Stack E2E - Suite Completa', () => {
 
     await page.getByRole('button', { name: 'Guardar Certificado' }).click();
     await expect(page.getByRole('button', { name: 'Guardar Certificado' })).toBeHidden();
-    
+
     const newRow = page.getByRole('row', { name: uniqueMemberName });
     await expect(newRow).toBeVisible({ timeout: 10000 });
     await expect(newRow.getByText(originalLicense)).toBeVisible();
   });
 
   // =========================================================================
-  // SCENARIO 2: MODIFICACIÓN / EDICIÓN (Rama 2)
+  // SCENARIO 2: MODIFICACIÓN / EDICIÓN
   // =========================================================================
   test('2. Debe permitir editar la matrícula del profesional del certificado creado y ver el cambio en la tabla', async ({ page }) => {
-    await page.goto('http://localhost:5173/medical-certificates');
+    await page.goto('/medical-certificates');
 
     const targetRow = page.getByRole('row', { name: uniqueMemberName });
     await expect(targetRow).toBeVisible({ timeout: 10000 });
@@ -71,25 +71,34 @@ test.describe('Medical Certificates Full-Stack E2E - Suite Completa', () => {
   });
 
   // =========================================================================
-  // SCENARIO 3: BAJA / ELIMINACIÓN FÍSICA (Rama 3)
+  // SCENARIO 3: BAJA / ELIMINACIÓN FÍSICA
   // =========================================================================
   test('3. Debe eliminar físicamente el certificado médico tras confirmar la acción y removerlo de la tabla', async ({ page }) => {
-    await page.goto('http://localhost:5173/medical-certificates');
+    await page.goto('/medical-certificates');
 
     const targetRow = page.getByRole('row', { name: uniqueMemberName });
     await expect(targetRow).toBeVisible({ timeout: 10000 });
 
-    // INTERCEPTOR: Escucha el diálogo nativo de confirmación y le da "Aceptar" automáticamente
     page.once('dialog', async (dialog) => {
       expect(dialog.message()).toContain('¿Estás seguro de que deseas eliminar el certificado');
       await dialog.accept();
     });
 
-    // Ejecuta el clic destructivo usando el aria-label definido en tu IconButton de Chakra UI
     await targetRow.getByRole('button', { name: /Eliminar Certificado/i }).click();
 
-    // ASERCIÓN: Comprueba que el registro desapareció por completo del DOM tras el borrado físico exitoso
     await expect(targetRow).toBeHidden({ timeout: 10000 });
+
+    // Limpieza: Elimina el socio creado para no dejar datos residuales
+    await page.goto('/members');
+    const memberRow = page.getByRole('row', { name: uniqueMemberName });
+    await expect(memberRow).toBeVisible({ timeout: 10000 });
+
+    page.once('dialog', async (dialog) => {
+      await dialog.accept();
+    });
+
+    await memberRow.getByRole('button', { name: /Eliminar miembro/i }).click();
+    await expect(memberRow).toBeHidden({ timeout: 10000 });
   });
 
 });
