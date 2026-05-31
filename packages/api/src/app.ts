@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { PostgresMemberRepository } from './infrastructure/PostgresMemberRepository.js';
@@ -10,16 +11,17 @@ import { MemberController } from './delivery/MemberController.js';
 
 //Payment
 import { PostgresPaymentRepository } from './infrastructure/PostgresPaymentRepository.js';
-import { PaymentController } from './delivery/PaymentController.js';
+import { PaymentController } from './delivery/payments/PaymentController.js';
 import { PrismaClient } from './generated/client/index.js';
 
 // Medical-certificate
 import { PostgresMedicalCertificateRepository } from './infrastructure/PostgresMedicalCertificateRepository.js';
+import { MedicalCertificateValidator } from './domain/services/MedicalCertificateValidator.js'; // <-- NUEVO IMPORT
 import { CreateMedicalCertificateUseCase } from './application/medical-certificate/CreateMedicalCertificateUseCase.js';
 import { GetMedicalCertificatesUseCase } from './application/medical-certificate/GetMedicalCertificatesUseCase.js';
 import { UpdateMedicalCertificateUseCase } from './application/medical-certificate/UpdateMedicalCertificateUseCase.js';
 import { DeleteMedicalCertificateUseCase } from './application/medical-certificate/DeleteMedicalCertificateUseCase.js';
-import { MedicalCertificateController } from './delivery/MedicalCertificateController.js';
+import { MedicalCertificateController } from './delivery/medical-certificate/MedicalCertificateController.js';
 
 //Sport
 import { PostgresSportRepository } from './infrastructure/PostgresSportRepository.js';
@@ -34,7 +36,7 @@ import { GetSportsUseCase } from './application/sports/GetSportsUseCase.js';
 import { PostgresLockerRepository } from './infrastructure/PostgresLockerRepository.js';
 import { LockerValidator } from './domain/services/LockerValidator.js';
 import { CreateLockerUseCase } from './application/locker/NewLockerUseCase.js';
-import { LockerController } from './delivery/LockerController.js';
+import { LockerController } from './delivery/locker/LockerController.js';
 import { UpdateLockerUseCase } from './application/locker/UpdateLockerUseCase.js';
 import { GetLockersUseCase } from './application/locker/GetLockersUseCase.js';
 import { DeleteLockerUseCase } from './application/locker/DeleteLockerUseCase.js';
@@ -59,6 +61,7 @@ export function buildApp() {
         credentials: true,
     });
 
+    // Infraestructura base compartida
     const memberRepo = new PostgresMemberRepository();
     const memberValidator = new MemberValidator(memberRepo);
 
@@ -84,12 +87,18 @@ export function buildApp() {
 
     const paymentRepo = new PostgresPaymentRepository();
     const paymentController = new PaymentController(paymentRepo, memberRepo);
+    
+    // --- Módulo de Certificados Médicos Refactorizado ---
     const medicalCertificateRepo = new PostgresMedicalCertificateRepository();
-
-    const createMedicalCertificateUseCase = new CreateMedicalCertificateUseCase(medicalCertificateRepo);
+    
+    // Instanciamos el validador al estilo de la cátedra pasándole sus dependencias
+    const medicalCertificateValidator = new MedicalCertificateValidator(medicalCertificateRepo, memberRepo);
+    
+    // Inyectamos el validador en cada Caso de Uso
+    const createMedicalCertificateUseCase = new CreateMedicalCertificateUseCase(medicalCertificateRepo, medicalCertificateValidator);
     const getMedicalCertificatesUseCase = new GetMedicalCertificatesUseCase(medicalCertificateRepo);
-    const updateMedicalCertificateUseCase = new UpdateMedicalCertificateUseCase(medicalCertificateRepo);
-    const deleteMedicalCertificateUseCase = new DeleteMedicalCertificateUseCase(medicalCertificateRepo);
+    const updateMedicalCertificateUseCase = new UpdateMedicalCertificateUseCase(medicalCertificateRepo, medicalCertificateValidator);
+    const deleteMedicalCertificateUseCase = new DeleteMedicalCertificateUseCase(medicalCertificateRepo, medicalCertificateValidator);
 
     const medicalCertificateController = new MedicalCertificateController(
         createMedicalCertificateUseCase,
@@ -97,7 +106,8 @@ export function buildApp() {
         updateMedicalCertificateUseCase,
         deleteMedicalCertificateUseCase
     );
-
+    // ----------------------------------------------------
+  
     const sportRepo = new PostgresSportRepository();
     const sportValidator = new SportValidator(sportRepo);
     const createSportUseCase = new CreateSportUseCase(sportRepo, sportValidator);
@@ -161,4 +171,3 @@ if (process.argv[1] && process.argv[1].endsWith('app.ts')) {
         });
     });
 }
-
