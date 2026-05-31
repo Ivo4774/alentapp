@@ -3,24 +3,27 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { FastifyInstance } from 'fastify';
 import { buildApp } from '../../app.js';
 import { CreateSportRequest } from '@alentapp/shared';
+import { PostgresSportRepository } from '../../infrastructure/PostgresSportRepository.js';
 
-vi.mock('../../infrastructure/PostgresSportRepository.js', () => {
-    return {
-        PostgresSportRepository: class {
-            async findAll() { return []; }
-            async findById(id: string) { return id === '1' ? { id: '1', name: 'Original', description: 'Vieja', max_capacity: 10 } : null; }
-            async findByName(name: string) { return name === 'Natacion' ? { id: '1', name: 'Natacion' } : null; }
-            async create(data: any) { return { id: '2', ...data, created_at: new Date().toISOString() }; }
-            async update(id: string, data: any) { return { id, ...data }; }
-            async delete(id: string) { return; }
-        }
-    };
-});
-
-describe('Sport API Integration Tests - Creación', () => {
+describe('Sport API Integration Tests', () => {
     let app: FastifyInstance;
 
     beforeAll(async () => {
+        vi.spyOn(PostgresSportRepository.prototype, 'findAll').mockResolvedValue([]);
+        vi.spyOn(PostgresSportRepository.prototype, 'findById').mockImplementation(async (id: string) => {
+            return id === '1' ? { id: '1', name: 'Original', description: 'Vieja', max_capacity: 10 } as any : null;
+        });
+        vi.spyOn(PostgresSportRepository.prototype, 'findByName').mockImplementation(async (name: string) => {
+            return name === 'Natacion' ? { id: '1', name: 'Natacion' } as any : null;
+        });
+        vi.spyOn(PostgresSportRepository.prototype, 'create').mockImplementation(async (data: any) => {
+            return { id: '2', ...data, created_at: new Date().toISOString() };
+        });
+        vi.spyOn(PostgresSportRepository.prototype, 'update').mockImplementation(async (id: string, data: any) => {
+            return { id, ...data };
+        });
+        vi.spyOn(PostgresSportRepository.prototype, 'delete').mockResolvedValue(undefined);
+
         app = buildApp();
         await app.ready();
     });
