@@ -48,4 +48,24 @@ test.describe('Locker Full-Stack E2E - Suite Completa', () => {
 
     await expect(lockerRow.getByText('Vestuario Actualizado E2E')).toBeVisible({ timeout: 10000 });
   });
+
+  // =========================================================================
+  // SCENARIO 3: ELIMINACIÓN
+  // =========================================================================
+  test('3. debe eliminar el casillero y limpiar la tabla', async ({ page }) => {
+    await page.goto('http://localhost:5173/lockers');
+    const lockerRow = page.getByRole('row', { name: uniqueNumber });
+    
+    // Configuramos el aceptador de alertas
+    page.on('dialog', async dialog => {
+        await dialog.accept(); 
+    });
+    
+    // Clic en el tachito de basura (segundo botón)
+    await lockerRow.locator('button').nth(1).click();
+
+    // Verificamos que desaparezca
+    await expect(lockerRow).toBeHidden({ timeout: 10000 });
+  });
+
 });
