@@ -77,13 +77,8 @@ describe('Locker API Integration Tests - Modificación (PATCH /api/v1/lockers/:i
             payload
         });
 
-        // 1. PRIMERO declaramos la variable
         const body = JSON.parse(response.payload);
-        
-        // 2. SEGUNDO la imprimimos (así si explota después, esto ya se vio)
-        console.log("🔥 ERROR DEL SERVIDOR:", body);
 
-        // 3. TERCERO y ÚLTIMO, hacemos las aserciones
         expect(response.statusCode).toBe(409);
         expect(body.error).toContain('registrado');
     });
