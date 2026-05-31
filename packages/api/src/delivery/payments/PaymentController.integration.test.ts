@@ -11,23 +11,6 @@ let app: FastifyInstance;
 describe('Payment API Integration Tests - Alta', () => {
 
     beforeAll(async () => {
-        vi.spyOn(PostgresPaymentRepository.prototype, 'findAll').mockResolvedValue([
-            { 
-                id: 'pago-1', 
-                amount: 5000, 
-                status: 'Pending', 
-                member_id: 'socio-1', 
-                month: 5, 
-                year: 2026, 
-                due_date: '2026-05-15',
-                payment_date: null
-            }
-        ]);
-
-        vi.spyOn(PostgresPaymentRepository.prototype, 'create').mockImplementation(async (data: any) => {
-            return { id: 'pago-nuevo-123', ...data, status: 'Pending' };
-        });
-
         vi.spyOn(PostgresMemberRepository.prototype, 'findById').mockImplementation(async (id: string) => {
             if (id === 'socio-1') {
                 return {
@@ -41,12 +24,6 @@ describe('Payment API Integration Tests - Alta', () => {
             }
             return null;
         });
-        vi.spyOn(PostgresPaymentRepository.prototype, 'findById').mockImplementation(async (id: string) => {
-            if (id === 'pago-1') {
-                return { id: 'pago-1', status: 'Pending', amount: 5000 } as any;
-            }
-            return null;
-        });
 
         vi.spyOn(PostgresPaymentRepository.prototype, 'findAll').mockResolvedValue([
             { id: 'pago-1', amount: 5000, status: 'Pending', member_id: 'socio-1', month: 5, year: 2026, due_date: '2026-05-15', payment_date: null }
@@ -56,13 +33,15 @@ describe('Payment API Integration Tests - Alta', () => {
             return { id: 'pago-nuevo-123', ...data, status: 'Pending' };
         });
 
-        vi.spyOn(PostgresPaymentRepository.prototype, 'updateStatus').mockImplementation(async (id: string, status: string) => {
-            return { id, status: 'Paid' } as any;
+        vi.spyOn(PostgresPaymentRepository.prototype, 'findById').mockImplementation(async (id: string) => {
+            if (id === 'pago-1') {
+                return { id: 'pago-1', status: 'Pending', amount: 5000 } as any;
+            }
+            return null;
         });
 
-        vi.spyOn(PostgresMemberRepository.prototype, 'findById').mockImplementation(async (id: string) => {
-            if (id === 'socio-1') return { id: 'socio-1', name: 'Belen Pieroni' } as any;
-            return null;
+        vi.spyOn(PostgresPaymentRepository.prototype, 'updateStatus').mockImplementation(async (id: string, status: string) => {
+            return { id, status: 'Paid' } as any;
         });
 
         app = buildApp();
