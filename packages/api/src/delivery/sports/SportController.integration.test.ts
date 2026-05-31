@@ -1,10 +1,10 @@
 import 'dotenv/config';
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { FastifyInstance } from 'fastify';
-import { buildApp } from '../app.js';
+import { buildApp } from '../../app.js';
 import { CreateSportRequest } from '@alentapp/shared';
 
-vi.mock('../infrastructure/PostgresSportRepository.js', () => {
+vi.mock('../../infrastructure/PostgresSportRepository.js', () => {
     return {
         PostgresSportRepository: class {
             async findAll() { return []; }
@@ -98,6 +98,29 @@ describe('Sport API Integration Tests - Creación', () => {
             expect(response.statusCode).toBe(400);
             const body = JSON.parse(response.payload);
             expect(body.error).toBe('El nombre del deporte es inmutable');
+        });
+    });
+
+    describe('DELETE /api/v1/sports/:id', () => {
+        it('debe retornar 204 y eliminar el deporte si existe', async () => {
+            const response = await app.inject({
+                method: 'DELETE',
+                url: '/api/v1/sports/1'
+            });
+
+            expect(response.statusCode).toBe(204);
+            expect(response.payload).toBe('');
+        });
+
+        it('debe retornar 404 si el deporte no existe', async () => {
+            const response = await app.inject({
+                method: 'DELETE',
+                url: '/api/v1/sports/999'
+            });
+
+            expect(response.statusCode).toBe(404);
+            const body = JSON.parse(response.payload);
+            expect(body.error).toBe('El deporte no existe');
         });
     });
 });
