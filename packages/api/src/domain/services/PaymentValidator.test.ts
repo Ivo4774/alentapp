@@ -79,4 +79,30 @@ describe('PaymentValidator', () => {
             await expect(validator.validatePay('pago-invalido', '2026-05-30')).rejects.toThrow('Pago no encontrado');
         });
     });
+
+    describe('validateCancel', () => {
+        it('debe pasar si el pago existe y está en estado Pendiente', async () => {
+            vi.mocked(mockPaymentRepo.findById).mockResolvedValueOnce({ id: 'pago-1', status: 'Pending' } as any);
+            
+            await expect(validator.validateCancel('pago-1')).resolves.not.toThrow();
+        });
+
+        it('debe lanzar error si el pago no existe', async () => {
+            vi.mocked(mockPaymentRepo.findById).mockResolvedValueOnce(null);
+            
+            await expect(validator.validateCancel('pago-invalido')).rejects.toThrow('Pago no encontrado');
+        });
+
+        it('debe lanzar error si el pago ya está pagado', async () => {
+            vi.mocked(mockPaymentRepo.findById).mockResolvedValueOnce({ id: 'pago-1', status: 'Paid' } as any);
+            
+            await expect(validator.validateCancel('pago-1')).rejects.toThrow('No se puede anular un pago ya pagado');
+        });
+
+        it('debe lanzar error si el pago ya está anulado', async () => {
+            vi.mocked(mockPaymentRepo.findById).mockResolvedValueOnce({ id: 'pago-1', status: 'Canceled' } as any);
+            
+            await expect(validator.validateCancel('pago-1')).rejects.toThrow('El pago ya ha sido anulado');
+        });
+    });
 });
