@@ -11,7 +11,7 @@ import { MemberController } from './delivery/MemberController.js';
 
 //Payment
 import { PostgresPaymentRepository } from './infrastructure/PostgresPaymentRepository.js';
-import { PaymentController } from './delivery/PaymentController.js';
+import { PaymentController } from './delivery/payments/PaymentController.js';
 import { PrismaClient } from './generated/client/index.js';
 
 // Medical-certificate
@@ -21,7 +21,7 @@ import { CreateMedicalCertificateUseCase } from './application/medical-certifica
 import { GetMedicalCertificatesUseCase } from './application/medical-certificate/GetMedicalCertificatesUseCase.js';
 import { UpdateMedicalCertificateUseCase } from './application/medical-certificate/UpdateMedicalCertificateUseCase.js';
 import { DeleteMedicalCertificateUseCase } from './application/medical-certificate/DeleteMedicalCertificateUseCase.js';
-import { MedicalCertificateController } from './delivery/MedicalCertificateController.js';
+import { MedicalCertificateController } from './delivery/medical-certificate/MedicalCertificateController.js';
 
 //Sport
 import { PostgresSportRepository } from './infrastructure/PostgresSportRepository.js';
