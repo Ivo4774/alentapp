@@ -59,7 +59,7 @@ export class LockerController {
             if (error.message === 'El casillero no existe' || error.message === 'El socio referenciado no existe') {
                 return reply.status(404).send({ error: error.message });
             }
-            if (error.message === 'Ya existe un casillero con ese número' || error.message === 'No se puede asignar un casillero en mantenimiento' || error.message === 'El socio ya tiene un casillero asignado') {
+            if (error.message === 'El número de casillero ya se encuentra registrado' || error.message === 'No se puede asignar un casillero en mantenimiento' || error.message === 'El socio ya tiene un casillero asignado') {
                 return reply.status(409).send({ error: error.message });
             }
 

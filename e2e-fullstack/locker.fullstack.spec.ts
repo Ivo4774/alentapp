@@ -1,3 +1,4 @@
+
 import { test, expect } from '@playwright/test';
 
 // Forzamos el modo serial para que corran en orden y usen los mismos datos
