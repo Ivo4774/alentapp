@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-// Forzamos el modo serial para que corran en orden en el mismo worker,
+// Forzamos el modo serial para que corran en orden encadenado usando el mismo socio
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Medical Certificates Full-Stack E2E - Suite Completa', () => {
@@ -8,12 +8,11 @@ test.describe('Medical Certificates Full-Stack E2E - Suite Completa', () => {
   const uniqueMemberName = `Socio E2E Modif ${uniqueSuffix}`;
   const uniqueDni = Math.floor(Math.random() * 89999999 + 10000000).toString();
   
-  // Matrículas dinámicas para evitar colisiones reales en BD
   const originalLicense = Math.floor(Math.random() * 499999 + 100000).toString();
   const updatedLicense = Math.floor(Math.random() * 500000 + 500000).toString();
 
   // =========================================================================
-  // SCENARIO 1: ALTA / CREACIÓN (Mantenemos tu flujo feliz en verde)
+  // SCENARIO 1: ALTA / CREACIÓN (Rama 1)
   // =========================================================================
   test('1. Debe cargar un certificado médico real y mostrarlo validado en el listado', async ({ page }) => {
     // Creación del socio requisito
@@ -51,28 +50,46 @@ test.describe('Medical Certificates Full-Stack E2E - Suite Completa', () => {
   });
 
   // =========================================================================
-  // SCENARIO 2: MODIFICACIÓN / EDICIÓN (requerimiento de la Rama 2)
+  // SCENARIO 2: MODIFICACIÓN / EDICIÓN (Rama 2)
   // =========================================================================
   test('2. Debe permitir editar la matrícula del profesional del certificado creado y ver el cambio en la tabla', async ({ page }) => {
     await page.goto('http://localhost:5173/medical-certificates');
-
 
     const targetRow = page.getByRole('row', { name: uniqueMemberName });
     await expect(targetRow).toBeVisible({ timeout: 10000 });
 
     await targetRow.getByRole('button', { name: /Editar Certificado/i }).click();
-
     await expect(page.getByText('Editar Certificado Médico')).toBeVisible();
 
     await page.getByPlaceholder('Ej. MN 123456').fill(updatedLicense);
-
 
     await page.getByRole('button', { name: 'Guardar Cambios' }).click();
     await expect(page.getByRole('button', { name: 'Guardar Cambios' })).toBeHidden();
 
     await expect(targetRow.getByText(updatedLicense)).toBeVisible({ timeout: 10000 });
-
     await expect(targetRow.getByText(originalLicense)).toBeHidden();
+  });
+
+  // =========================================================================
+  // SCENARIO 3: BAJA / ELIMINACIÓN FÍSICA (Rama 3)
+  // =========================================================================
+  test('3. Debe eliminar físicamente el certificado médico tras confirmar la acción y removerlo de la tabla', async ({ page }) => {
+    await page.goto('http://localhost:5173/medical-certificates');
+
+    const targetRow = page.getByRole('row', { name: uniqueMemberName });
+    await expect(targetRow).toBeVisible({ timeout: 10000 });
+
+    // INTERCEPTOR: Escucha el diálogo nativo de confirmación y le da "Aceptar" automáticamente
+    page.once('dialog', async (dialog) => {
+      expect(dialog.message()).toContain('¿Estás seguro de que deseas eliminar el certificado');
+      await dialog.accept();
+    });
+
+    // Ejecuta el clic destructivo usando el aria-label definido en tu IconButton de Chakra UI
+    await targetRow.getByRole('button', { name: /Eliminar Certificado/i }).click();
+
+    // ASERCIÓN: Comprueba que el registro desapareció por completo del DOM tras el borrado físico exitoso
+    await expect(targetRow).toBeHidden({ timeout: 10000 });
   });
 
 });
