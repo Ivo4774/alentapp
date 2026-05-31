@@ -70,3 +70,34 @@ test.describe('Sports Full-Stack E2E - Edición', () => {
   });
 
 });
+
+test.describe('Sports Full-Stack E2E - Eliminación', () => {
+
+  test('debe poder eliminar un deporte tras aceptar la alerta de confirmación', async ({ page }) => {
+    const uniqueName = `Rugby E2E ${Date.now()}`;
+    await page.goto('/sports');
+
+    // 1. Crear el deporte
+    await page.locator('button:has-text("Nuevo Deporte")').click();
+    await page.getByPlaceholder('Ej. Natación').fill(uniqueName);
+    await page.getByPlaceholder('Breve detalle de la actividad').fill('Para eliminar');
+    await page.getByPlaceholder('Ej. 20').fill('15');
+    await page.getByRole('button', { name: 'Crear Deporte' }).click();
+
+    const newRow = page.getByRole('row', { name: uniqueName });
+    await expect(newRow).toBeVisible({ timeout: 10000 });
+
+    // 2. Preparar interceptor del dialog (alerta)
+    page.on('dialog', async dialog => {
+      expect(dialog.message()).toContain(`¿Estás seguro de que deseas eliminar la disciplina "${uniqueName}"?`);
+      await dialog.accept();
+    });
+
+    // 3. Clic en eliminar (tachito rojo)
+    await newRow.getByRole('button', { name: 'Eliminar' }).click();
+
+    // 4. Verificar que la fila desapareció de la tabla
+    await expect(newRow).toBeHidden({ timeout: 10000 });
+  });
+
+});
