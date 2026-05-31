@@ -8,7 +8,7 @@ import { PostgresMemberRepository } from '../../infrastructure/PostgresMemberRep
 
 let app: FastifyInstance;
 
-describe('Payment API Integration Tests - Alta', () => {
+describe('Payment API Integration Tests - Completo', () => {
 
     beforeAll(async () => {
         vi.spyOn(PostgresMemberRepository.prototype, 'findById').mockImplementation(async (id: string) => {
