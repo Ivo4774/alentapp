@@ -18,7 +18,7 @@ test.afterEach(async ({ page }) => {
   await page.goto('/members');
   const memberRow = page.getByRole('row', { name: uniqueMemberName });
   await expect(memberRow).toBeVisible({ timeout: 10000 });
-  page.removeAllListeners('dialog');
+
   page.once('dialog', async (dialog) => {
     await dialog.accept();
   });
@@ -27,7 +27,7 @@ test.afterEach(async ({ page }) => {
   try {
     await expect(memberRow).toBeHidden({ timeout: 3000 });
   } catch (e) {
-    console.log('No se pudo borrar el miembro físico (probablemente por reglas de FK de pagos).');
+    console.log('No se pudo borrar el miembro físico (por restricciones de clave foránea de los pagos creados).');
   }
 });
 
@@ -38,7 +38,7 @@ test.describe('Payments Full-Stack E2E - Alta', () => {
     await page.goto('/payments');
     await page.getByRole('button', { name: 'Generar Pago' }).click();
     await page.getByText('Busque y seleccione un socio').click();
-    await page.getByRole('option').first().click();
+    await page.getByRole('option', { name: uniqueMemberName }).click();
     await page.getByPlaceholder('Ej. 15000').fill(uniqueAmount);
     await page.getByRole('combobox', { name: 'Mes de Referencia' }).click();
     await page.getByRole('option', { name: 'Mes 6' }).click();
@@ -59,7 +59,7 @@ test.describe('Payments Full-Stack E2E - Actualización', () => {
     await page.goto('/payments');
     await page.getByRole('button', { name: 'Generar Pago' }).click();
     await page.getByText('Busque y seleccione un socio').click();
-    await page.getByRole('option').first().click();
+    await page.getByRole('option', { name: uniqueMemberName }).click();
     await page.getByPlaceholder('Ej. 15000').fill(uniqueAmount);
     await page.getByRole('combobox', { name: 'Mes de Referencia' }).click();
     await page.getByRole('option', { name: 'Mes 6' }).click();
@@ -69,7 +69,7 @@ test.describe('Payments Full-Stack E2E - Actualización', () => {
     const paymentRow = page.getByRole('row').filter({ hasText: uniqueAmount });
     await expect(paymentRow).toBeVisible();
 
-    page.on('dialog', async (dialog) => {
+    page.once('dialog', async (dialog) => {
       await dialog.accept();
     });
 
@@ -87,7 +87,7 @@ test.describe('Payments Full-Stack E2E - Cancelación', () => {
     await page.goto('/payments');
     await page.getByRole('button', { name: 'Generar Pago' }).click();
     await page.getByText('Busque y seleccione un socio').click();
-    await page.getByRole('option').first().click();
+    await page.getByRole('option', { name: uniqueMemberName }).click();
     await page.getByPlaceholder('Ej. 15000').fill(uniqueAmount);
     await page.getByRole('combobox', { name: 'Mes de Referencia' }).click();
     await page.getByRole('option', { name: 'Mes 6' }).click();
@@ -96,7 +96,7 @@ test.describe('Payments Full-Stack E2E - Cancelación', () => {
     await page.getByRole('button', { name: 'Emitir Comprobante' }).click();
     const paymentRow = page.getByRole('row').filter({ hasText: uniqueAmount });
     await expect(paymentRow).toBeVisible();
-    page.on('dialog', async (dialog) => {
+    page.once('dialog', async (dialog) => {
       await dialog.accept();
     });
     await paymentRow.getByRole('button', { name: 'Anular Comprobante' }).click();
