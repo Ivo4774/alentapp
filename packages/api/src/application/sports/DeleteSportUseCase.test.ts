@@ -14,15 +14,30 @@ describe('DeleteSportUseCase', () => {
         vi.clearAllMocks();
     });
 
-    it('debe lanzar error si el deporte no existe', async () => {
-        vi.mocked(mockSportRepo.findById).mockResolvedValueOnce(null);
-        await expect(useCase.execute('uuid-999')).rejects.toThrow('El deporte no existe');
-        expect(mockSportRepo.delete).not.toHaveBeenCalled();
+    describe('cuando el deporte no existe', () => {
+        beforeEach(() => {
+            vi.mocked(mockSportRepo.findById).mockResolvedValueOnce(null);
+        });
+
+        it('debe lanzar error', async () => {
+            await expect(useCase.execute('uuid-999')).rejects.toThrow('El deporte no existe');
+        });
+
+        it('no debe llamar al método delete del repositorio', async () => {
+            // Suprimimos el error aquí capturándolo para verificar el estado del mock tranquilamente
+            try { await useCase.execute('uuid-999'); } catch (e) {}
+            expect(mockSportRepo.delete).not.toHaveBeenCalled();
+        });
     });
 
-    it('debe eliminar el deporte si existe', async () => {
-        vi.mocked(mockSportRepo.findById).mockResolvedValueOnce({ id: 'uuid-1' } as any);
-        await useCase.execute('uuid-1');
-        expect(mockSportRepo.delete).toHaveBeenCalledWith('uuid-1');
+    describe('cuando el deporte existe', () => {
+        beforeEach(async () => {
+            vi.mocked(mockSportRepo.findById).mockResolvedValueOnce({ id: 'uuid-1' } as any);
+            await useCase.execute('uuid-1');
+        });
+
+        it('debe llamar al método delete del repositorio con el ID', () => {
+            expect(mockSportRepo.delete).toHaveBeenCalledWith('uuid-1');
+        });
     });
 });

@@ -43,14 +43,26 @@ describe('UpdateSportUseCase - Unit Tests', () => {
             .toThrow('La nueva capacidad debe ser mayor a cero');
     });
 
-    it('debe llamar al repositorio con los datos limpios si el payload es valido', async () => {
-        mockRepo.findById.mockResolvedValueOnce({ id: '1', name: 'Original', description: 'Vieja', max_capacity: 10 });
-        mockRepo.update.mockResolvedValueOnce({ id: '1', name: 'Original', description: 'Nueva description', max_capacity: 25 });
+    describe('cuando el payload de actualización es válido', () => {
+        let result: any;
 
-        const result = await updateSportUseCase.execute('1', { description: 'Nueva description', max_capacity: 25 });
+        beforeEach(async () => {
+            mockRepo.findById.mockResolvedValueOnce({ id: '1', name: 'Original', description: 'Vieja', max_capacity: 10 });
+            mockRepo.update.mockResolvedValueOnce({ id: '1', name: 'Original', description: 'Nueva description', max_capacity: 25 });
 
-        expect(mockRepo.update).toHaveBeenCalledWith('1', { description: 'Nueva description', max_capacity: 25 });
-        expect(result.description).toBe('Nueva description');
-        expect(result.max_capacity).toBe(25);
+            result = await updateSportUseCase.execute('1', { description: 'Nueva description', max_capacity: 25 });
+        });
+
+        it('debe enviar los campos correctos al repositorio', () => {
+            expect(mockRepo.update).toHaveBeenCalledWith('1', { description: 'Nueva description', max_capacity: 25 });
+        });
+
+        it('debe retornar la descripción actualizada', () => {
+            expect(result.description).toBe('Nueva description');
+        });
+
+        it('debe retornar la capacidad máxima actualizada', () => {
+            expect(result.max_capacity).toBe(25);
+        });
     });
 });
