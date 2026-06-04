@@ -5,29 +5,12 @@
 Voy a detallar los 5 problemas críticos identificados en la configuración de desarrollo actual, que impiden su despliegue seguro y eficiente en un entorno de producción:
 
 | Problema | ¿Dónde ocurre? | Impacto | Solución propuesta |
-| -------- | -------------- | ------- | ------------------ |
-
-| **1. El servidor de desarrollo de Vite en el Frontend.** Vite gasta un montón de memoria y CPU vigilando los archivos. Está bien para desarrollo porque no recibe miles de usuarios reales, pero está mal en producción.
-
- | `packages/web/Dockerfile` (Línea del `CMD`) y `docker-compose.yml` (servicio `web`, línea de `command`). | **Alto** | Implementar un *Multi-Stage Build*. En la etapa final, compilar la aplicación usando `vite build` y transferir los assets estáticos resultantes a una imagen liviana de **Nginx Alpine** para su distribución eficiente.
-
- |
-| **2. Comandos de desarrollo en la API (prisma migrate dev y tsx watch)** `prisma migrate dev`: En un contenedor automático, esto puede romper todo o, peor,
-borrar los datos reales. `tsx watch`: gasta CPU inútilmente porque en producción el código nunca va a cambiar
-mientras corre.
-
- | `docker-compose.yml` (servicio `api`, línea de `command`). | **Alto** | Reemplazar `prisma migrate dev` por `prisma migrate deploy`. Compilar el código TypeScript a JavaScript puro en una etapa previa de build (`tsc`) y ejecutar el proceso final directamente con `node dist/app.js`.
-
- |
-| **3. Exposición de Credenciales** Credenciales y secretos de configuración hardcodeados en texto plano. | `docker-compose.yml` (En las variables `POSTGRES_PASSWORD` y `DATABASE_URL`). | **Alto** | Eliminar las contraseñas explícitas del archivo de configuración. En su lugar, utilizar un archivo `.env` externo (excluido de Git mediante `.gitignore`) e inyectar las credenciales usando la directiva `env_file` del Dockerfile.
-
- |
-| **4. Correr como usuario root (Administrador)** por defecto dentro de los contenedores. Si un hacker encuentra un fallo de seguridad logra "romper" la aplicación, al estar como root gana control absoluto de todo el contenedor.
-
- | `packages/api/Dockerfile` y `packages/web/Dockerfile` (por omisión de la directiva `USER`). | **Alto** | Configurar explícitamente la directiva `USER node` (aprovechando el usuario sin privilegios que ya incluyen las imágenes base de Node Alpine) en la etapa de ejecución de producción.
-
- |
-| **5. Monitoreo constante de archivos mediante Polling activo** Hay  variables que fuerzan al contenedor a escanear el disco duro constantemente (`CHOKIDAR_USEPOLLING` y `WATCHPACK_POLLING`). El *polling* se usa para actualizar la pantalla en desarrollo. En producción consume CPU innecesariamente. | `docker-compose.yml` (servicios `api` y `web`, variables de entorno `environment`). | **Medio** | Eliminar por completo estas variables de entorno en el entorno productivo. |
+| :--- | :--- | :--- | :--- |
+| **1. Servidor de desarrollo en el Frontend (Vite dev server):** Vite gasta excesiva memoria y CPU vigilando archivos en tiempo real. Esto es ineficiente para soportar tráfico masivo y real en un entorno productivo. | `packages/web/Dockerfile` (Línea del `CMD`) y `docker-compose.yml` (servicio `web`, línea de `command`). | **Alto** | Implementar un *Multi-Stage Build*. En la etapa final, compilar la aplicación usando `vite build` y transferir los assets estáticos resultantes a una imagen liviana de **Nginx Alpine** para su distribución eficiente. |
+| **2. Comandos de desarrollo en la API (`prisma migrate dev` y `tsx watch`):** `prisma migrate dev` es interactivo y puede borrar la base de datos real si detecta discrepancias. `tsx watch` consume CPU inútilmente buscando cambios de código que nunca ocurrirán en producción. | `docker-compose.yml` (servicio `api`, línea de `command`). | **Alto** | Reemplazar `prisma migrate dev` por `prisma migrate deploy`. Compilar el código TypeScript a JavaScript puro en una etapa previa de build (`tsc`) y ejecutar el proceso final directamente con `node dist/app.js`. |
+| **3. Exposición de credenciales y secretos de configuración:** Contraseñas de la base de datos hardcodeadas en texto plano. Si se sube al control de versiones, cualquier persona expone la seguridad de la infraestructura (violación de estándares OWASP). | `docker-compose.yml` (En las variables `POSTGRES_PASSWORD` y `DATABASE_URL`). | **Alto** | Eliminar las contraseñas explícitas del archivo de configuración. En su lugar, utilizar un archivo `.env` externo (excluido de Git mediante `.gitignore`) e inyectar las credenciales en caliente usando la directiva `env_file` de Docker Compose. |
+| **4. Ejecución de procesos con privilegios de administrador (`root`):** Por defecto, los contenedores corren como root. Si un atacante explota una vulnerabilidad en el código, obtiene control total del contenedor y podría intentar un escape al sistema host. | `packages/api/Dockerfile` y `packages/web/Dockerfile` (por omisión de la directiva `USER`). | **Alto** | Configurar explícitamente la directiva `USER node` (aprovechando el usuario sin privilegios que ya incluyen las imágenes base de Node Alpine) en la etapa de ejecución de producción. |
+| **5. Monitoreo constante de archivos mediante Polling activo:** Las variables `CHOKIDAR_USEPOLLING` y `WATCHPACK_POLLING` fuerzan al contenedor a escanear continuamente el disco buscando modificaciones, generando un uso innecesario de CPU del 100% en producción. | `docker-compose.yml` (servicios `api` y `web`, variables de entorno `environment`). | **Medio** | Eliminar por completo estas variables de entorno en el entorno productivo, ya que el código de producción permanece estático e inmutable. |
 
 ---
 
