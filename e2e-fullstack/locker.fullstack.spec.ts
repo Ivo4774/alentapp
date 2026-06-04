@@ -8,7 +8,7 @@ test.describe('Locker Full-Stack E2E - Aislamiento de Pruebas', () => {
   test('debe crear un casillero real y mostrarlo en la tabla', async ({ page }) => {
     const uniqueNumber = Math.floor(Math.random() * 10000).toString();
     
-    await page.goto('http://localhost:5173/lockers');
+    await page.goto('/lockers');
     await page.locator('button:has-text("Agregar Casillero")').click();
     await expect(page.getByText('Agregar Nuevo Casillero')).toBeVisible();
 
@@ -28,7 +28,7 @@ test.describe('Locker Full-Stack E2E - Aislamiento de Pruebas', () => {
   // =========================================================================
   test('debe editar un casillero existente y mostrar los cambios', async ({ page }) => {
     const uniqueNumber = Math.floor(Math.random() * 10000).toString();
-    await page.goto('http://localhost:5173/lockers');
+    await page.goto('/lockers');
     
     // SETUP: Creamos el casillero específicamente para este test
     await page.locator('button:has-text("Agregar Casillero")').click();
@@ -58,7 +58,7 @@ test.describe('Locker Full-Stack E2E - Aislamiento de Pruebas', () => {
   // =========================================================================
   test('debe eliminar un casillero y limpiar la tabla', async ({ page }) => {
     const uniqueNumber = Math.floor(Math.random() * 10000).toString();
-    await page.goto('http://localhost:5173/lockers');
+    await page.goto('/lockers');
     
     // SETUP: Creamos el casillero específicamente para borrarlo
     await page.locator('button:has-text("Agregar Casillero")').click();
