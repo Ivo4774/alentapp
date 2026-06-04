@@ -1,8 +1,8 @@
-# Fase 1: Analizar y proponer
+# Análisis de Infraestructura y Observabilidad
 
-## 1.1. Analizar la infraestructura Docker actual
+## 1.1. Análisis de la Infraestructura Docker Actual
 
-Tras analizar los archivos de configuración Docker (`docker-compose.yml`, `packages/api/Dockerfile` y `packages/web/Dockerfile`), se identificaron los siguientes 5 problemas o vulnerabilidades respecto a buenas prácticas de producción:
+Voy a detallar los 5 problemas críticos identificados en la configuración de desarrollo actual, que impiden su despliegue seguro y eficiente en un entorno de producción:
 
 | Problema | ¿Dónde ocurre? | Impacto | Solución propuesta |
 |---|---|---|---|
