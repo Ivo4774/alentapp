@@ -31,7 +31,7 @@ try {
 
 const meter = metrics.getMeter('alentapp-api');
 
-// Función helper para las métricas RED (Rate, Errors, Duration)
+// Función helper para las métricas RED
 export function createREDMetrics(meter: Meter) {
   const requestCounter = meter.createCounter('http.requests.total', {
     description: 'Total de requests HTTP',
