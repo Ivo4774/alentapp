@@ -60,3 +60,93 @@
 * **Persistencia e Inmutabilidad de los Datos:** Se elimina completamente el uso de volúmenes de desarrollo basados en carpetas locales (`bind mounts` como `- .:/app`). Los servicios funcionarán exclusivamente utilizando el código empaquetado dentro de sus imágenes productivas, delegando la persistencia de datos al volumen nombrado `pgdata` administrado por Docker.
 
 * **Aislamiento de Puertos de Telemetría:** El archivo Compose expondrá únicamente los puertos indispensables para el acceso externo. El tráfico de usuarios ingresará por el puerto público `80`, redirigido internamente al puerto `8080` de Nginx rootless. Por su parte, el puerto de telemetría `9464` permanecerá inaccesible desde el exterior y estará disponible únicamente para el sistema interno de monitoreo basado en el modelo *Pull*.
+
+## Tarjeta de Observabilidad: Plan de Telemetría y Monitoreo
+
+Para la API desarrollada sobre Fastify, implementaremos una estrategia de instrumentación robusta y eficiente utilizando el SDK nativo de OpenTelemetry para Node.js.
+
+El flujo de recolección de datos funcionará bajo el siguiente modelo arquitectónico:
+
+* **Carga Temprana (Prioritaria):** El motor de telemetría se ejecutará en el punto de entrada más alto de la aplicación, antes de que se cargue cualquier controlador de Fastify o modelo de Prisma. Esto garantiza que ningún request inicial quede sin registrar.
+* **Auto-instrumentación Absoluta (Zero-Code Metrics):** Delegaremos por completo la captura de las métricas RED en la capa de abstracción de OpenTelemetry mediante plugins oficiales. Esto evita tener que inyectar código de monitoreo manualmente dentro de los controladores de nuestra lógica de negocio, reduciendo el acoplamiento y previniendo el impacto en la performance por procesamiento duplicado.
+  * `@opentelemetry/instrumentation-http`: Intercepta los sockets de red para capturar el tráfico HTTP crudo.
+  * `@opentelemetry/instrumentation-fastify`: Traduce los eventos del framework en rutas semánticas de nuestra API (ej: identifica `/members/:id` en lugar de registrar cientos de métricas individuales con IDs distintos).
+* **Mecanismo de Exposición (Pull Model):** Utilizaremos un Prometheus Exporter que levanta un servidor HTTP interno en el puerto `9464` bajo la ruta `/metrics`. La API solo expone el estado de los contadores en memoria; el servidor central de Prometheus se encargará de pasar a buscar los datos de forma asrónica (scraping).
+
+### Catálogo Estructurado de Métricas (Modelo RED)
+
+Este es el inventario de datos que nuestra capa de auto-instrumentación generará de forma nativa y transparente. Está diseñado bajo el estándar RED (Rate, Errors, Duration) para medir la salud del software desde la perspectiva del usuario final, sumando métricas esenciales de infraestructura.
+
+| Métrica Semántica (OTel) | Tipo de Instrumento | Descripción Técnica | Dimensiones / Etiquetas (Labels) |
+| :--- | :--- | :--- | :--- |
+| `http.server.request.count` | **Counter** | Contador acumulativo que registra la cantidad total de solicitudes HTTP que ingresan a la API. Sirve para calcular la Tasa de tráfico (Rate). | `http.method` (GET/POST), `http.route` (endpoint), `http.status_code` |
+| `http.server.request.errors` | **Counter** | Filtro automático que registra únicamente las solicitudes que fallaron con códigos de estado 4xx y 5xx. Mide los Errores (Errors). | `http.method`, `http.route`, `http.status_code` |
+| `http.server.duration` | **Histogram** | Histograma de distribución que mide el tiempo de respuesta en milisegundos. Permite calcular la Duración (Duration) mediante percentiles. | `http.method`, `http.route` |
+| `process.runtime.nodejs.memory.usage` | **Gauge** | Medidor instantáneo que registra el consumo de memoria RAM del proceso Node.js en bytes para detectar fugas de memoria. | N/A |
+| `process.runtime.nodejs.cpu.usage` | **Gauge** | Medidor que registra el porcentaje de uso de CPU asignado al contenedor de la API. | N/A |
+
+### Plano del Archivo de Inicialización (`telemetry.ts`)
+
+Este es el diseño definitivo de cómo se estructurará el archivo `packages/api/src/infrastructure/telemetry.ts`. Al delegar el 100% de las métricas en la auto-instrumentación, el archivo se mantiene limpio, mantenible y enfocado puramente en la configuración del ciclo de vida del SDK.
+
+```typescript
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
+import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
+
+// CONFIGURACIÓN DEL PUERTO DE ESCUCHA PARA PROMETHEUS
+const prometheusExporter = new PrometheusExporter({
+  port: 9464,
+  endpoint: '/metrics'
+});
+
+// CONFIGURACIÓN CENTRAL DEL SDK
+const sdk = new NodeSDK({
+  metricReader: prometheusExporter,
+  instrumentations: [
+    getNodeAutoInstrumentations({
+      // Componentes que impactan en Fastify
+      '@opentelemetry/instrumentation-http': { enabled: true },
+      '@opentelemetry/instrumentation-fastify': { enabled: true }
+    })
+  ]
+});
+
+// ARRANQUE DEL SISTEMA DE TELEMETRÍA
+sdk.start();
+
+```
+
+### Plan de Visualización: Dashboard RED en Grafana
+
+Para que los datos crudos recopilados por la auto-instrumentación sean útiles, diseñamos un tablero en Grafana compuesto por **6 paneles visuales críticos** para el control del entorno productivo.
+
+* **Panel 1: Tasa de Tráfico Actual (Rate)**
+  * **Tipo de Gráfico:** Gráfico de Series Temporales (Time Series).
+  * **Fórmula PromQL:** `sum(rate(http_server_request_count[1m]))`
+  * **Propósito:** Muestra cuántas peticiones por segundo está procesando la API en tiempo real. Permite dimensionar la infraestructura ante picos de usuarios.
+
+* **Panel 2: Porcentaje de Disponibilidad / Errores (Errors)**
+  * **Tipo de Gráfico:** Indicador Numérico Grande (Stat / Gauge Circular).
+  * **Fórmula PromQL:** `(sum(rate(http_server_request_errors[5m])) / sum(rate(http_server_request_count[5m]))) * 100`
+  * **Propósito:** Calcula el porcentaje exacto de requests fallidos. Si este número sube del 1%, significa que hay una degradación del servicio o una caída de la base de datos.
+
+* **Panel 3: Latencia del Percentil 95 (Duration)**
+  * **Tipo de Gráfico:** Gráfico de Series Temporales.
+  * **Fórmula PromQL:** `histogram_quantile(0.95, sum(rate(http_server_duration_bucket[5m])) by (le))`
+  * **Propósito:** Monitorea el tiempo de respuesta del 5% de los usuarios que experimentan mayor lentitud. Es el indicador real de la experiencia de usuario (un promedio simple escondería los requests lentos).
+
+* **Panel 4: Distribución de Respuestas por Código de Estado HTTP**
+  * **Tipo de Gráfico:** Gráfico de Barras Apiladas (Stacked Bar Chart).
+  * **Fórmula PromQL:** `sum by (http_status_code) (rate(http_server_request_count[5m]))`
+  * **Propósito:** Permite ver de forma visual cuántas respuestas son exitosas (verdes / 2xx), cuántas son errores de cliente (amarillas / 4xx) y cuántas son fallas del servidor (rojas / 5xx).
+
+* **Panel 5: Consumo de Memoria RAM del Contenedor**
+  * **Tipo de Gráfico:** Gráfico de Líneas con umbrales de alerta.
+  * **Fórmula PromQL:** `process_runtime_nodejs_memory_usage / 1024 / 1024`
+  * **Propósito:** Controla el consumo de RAM en Megabytes. Ayuda a verificar si los límites estrictos puestos en el Docker Compose (`deploy.resources.limits.memory`) están cerca de saturarse o si hay fugas de memoria en el proceso Node.js.
+
+* **Panel 6: Top 5 de Endpoints más lentos (Análisis de Cuellos de Botella)**
+  * **Tipo de Gráfico:** Tabla Ordenada o Gráfico de Barras Horizontal.
+  * **Fórmula PromQL:** `topk(5, avg by (http_route) (http_server_duration_sum / http_server_duration_count))`
+    * **Propósito:** Identifica con nombre exacto cuáles son las 5 rutas de la API que más tardan en responder para que el equipo sepa exactamente qué controladores optimizar o qué consultas a Prisma requieren índices.
