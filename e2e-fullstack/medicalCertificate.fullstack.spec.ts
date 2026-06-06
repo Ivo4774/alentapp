@@ -1,31 +1,53 @@
-import { test, expect } from '@playwright/test';
+import { test as base, expect } from '@playwright/test';
 
-// Forzamos el modo serial para que corran en orden encadenado usando el mismo socio
-test.describe.configure({ mode: 'serial' });
-
-test.describe('Medical Certificates Full-Stack E2E - Suite Completa', () => {
-  const uniqueSuffix = Date.now().toString();
-  const uniqueMemberName = `Socio E2E Modif ${uniqueSuffix}`;
-  const uniqueDni = Math.floor(Math.random() * 89999999 + 10000000).toString();
-
-  const originalLicense = Math.floor(Math.random() * 499999 + 100000).toString();
-  const updatedLicense = Math.floor(Math.random() * 500000 + 500000).toString();
-
-  // =========================================================================
-  // SCENARIO 1: ALTA / CREACIÓN
-  // =========================================================================
-  test('1. Debe cargar un certificado médico real y mostrarlo validado en el listado', async ({ page }) => {
-    // Creación del socio requisito
+const test = base.extend<{ memberSetup: { name: string } }>({
+  memberSetup: async ({ page }, use) => {
+    const uniqueMemberName = `Socio Certificados ${Date.now()}`;
+    
     await page.goto('/members');
     await page.locator('button:has-text("Agregar Miembro")').click();
     await page.getByPlaceholder('Ej. Juan Pérez').fill(uniqueMemberName);
-    await page.getByPlaceholder('Ej. 12345678').fill(uniqueDni);
-    await page.getByPlaceholder('ejemplo@correo.com').fill(`e2e.${uniqueSuffix}@test.com`);
-    await page.getByLabel(/Fecha de Nacimiento/i).fill('1995-06-15');
+    await page.getByPlaceholder('Ej. 12345678').fill(Math.floor(Math.random() * 89999999 + 10000000).toString());
+    await page.getByPlaceholder('ejemplo@correo.com').fill(`cert.${Date.now()}@test.com`);
+    await page.getByLabel(/Fecha de Nacimiento/i).fill('1990-01-01');
     await page.getByRole('button', { name: 'Crear Miembro' }).click();
     await expect(page.getByRole('button', { name: 'Crear Miembro' })).toBeHidden();
+    await use({ name: uniqueMemberName });
 
-    // Alta del certificado
+    await page.goto('/medical-certificates');
+    const certRow = page.getByRole('row', { name: uniqueMemberName });
+    
+    try {
+      await expect(certRow).toBeVisible({ timeout: 2000 });
+      page.once('dialog', async (dialog) => {
+        await dialog.accept();
+      });
+      await certRow.getByRole('button', { name: /Eliminar Certificado/i }).click();
+      await expect(certRow).toBeHidden({ timeout: 3000 });
+    } catch (e) {
+    }
+
+    await page.goto('/members');
+    const memberRow = page.getByRole('row', { name: uniqueMemberName });
+    await expect(memberRow).toBeVisible({ timeout: 10000 });
+
+    page.once('dialog', async (dialog) => {
+      await dialog.accept();
+    });
+    
+    await memberRow.getByRole('button', { name: /Eliminar miembro/i }).click();
+    await expect(memberRow).toBeHidden({ timeout: 5000 });
+  },
+});
+
+// =========================================================================
+// Medical Certificates  - Alta
+// =========================================================================
+test.describe('Medical Certificates Full-Stack E2E - Alta', () => {
+
+  test('debe cargar un certificado médico real y mostrarlo validado en el listado', async ({ page, memberSetup }) => {
+    const uniqueMemberName = memberSetup.name;
+    const originalLicense = Math.floor(Math.random() * 499999 + 100000).toString();
     await page.goto('/medical-certificates');
     await page.getByRole('button', { name: /Cargar Certificado/i }).click();
     await page.getByRole('combobox', { name: /Seleccionar Socio/i }).click();
@@ -49,11 +71,32 @@ test.describe('Medical Certificates Full-Stack E2E - Suite Completa', () => {
     await expect(newRow.getByText(originalLicense)).toBeVisible();
   });
 
-  // =========================================================================
-  // SCENARIO 2: MODIFICACIÓN / EDICIÓN
-  // =========================================================================
-  test('2. Debe permitir editar la matrícula del profesional del certificado creado y ver el cambio en la tabla', async ({ page }) => {
+});
+
+// =========================================================================
+// Medical Certificates - Actualización
+// =========================================================================
+test.describe('Medical Certificates Full-Stack E2E - Actualización', () => {
+
+  test('debe permitir editar la matrícula del profesional del certificado creado y ver el cambio en la tabla', async ({ page, memberSetup }) => {
+    const uniqueMemberName = memberSetup.name;
+    const originalLicense = Math.floor(Math.random() * 499999 + 100000).toString();
+    const updatedLicense = Math.floor(Math.random() * 500000 + 500000).toString();
+
     await page.goto('/medical-certificates');
+    await page.getByRole('button', { name: /Cargar Certificado/i }).click();
+    await page.getByRole('combobox', { name: /Seleccionar Socio/i }).click();
+    await page.getByRole('option', { name: new RegExp(uniqueMemberName, 'i') }).click();
+    await page.getByPlaceholder('Ej. MN 123456').fill(originalLicense);
+    await page.getByLabel(/Fecha de Emisión/i).fill('2026-05-01');
+    await page.getByLabel(/Fecha de Vencimiento/i).fill('2026-12-31');
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'comprobante_aptitud_e2e.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64'),
+    });
+    await page.getByRole('button', { name: 'Guardar Certificado' }).click();
+    await expect(page.getByRole('button', { name: 'Guardar Certificado' })).toBeHidden();
 
     const targetRow = page.getByRole('row', { name: uniqueMemberName });
     await expect(targetRow).toBeVisible({ timeout: 10000 });
@@ -70,11 +113,31 @@ test.describe('Medical Certificates Full-Stack E2E - Suite Completa', () => {
     await expect(targetRow.getByText(originalLicense)).toBeHidden();
   });
 
-  // =========================================================================
-  // SCENARIO 3: BAJA / ELIMINACIÓN FÍSICA
-  // =========================================================================
-  test('3. Debe eliminar físicamente el certificado médico tras confirmar la acción y removerlo de la tabla', async ({ page }) => {
+});
+
+// =========================================================================
+// Medical Certificates - Eliminación
+// =========================================================================
+test.describe('Medical Certificates Full-Stack E2E - Eliminación', () => {
+
+  test('debe eliminar físicamente el certificado médico tras confirmar la acción y removerlo de la tabla', async ({ page, memberSetup }) => {
+    const uniqueMemberName = memberSetup.name;
+    const originalLicense = Math.floor(Math.random() * 499999 + 100000).toString();
+
     await page.goto('/medical-certificates');
+    await page.getByRole('button', { name: /Cargar Certificado/i }).click();
+    await page.getByRole('combobox', { name: /Seleccionar Socio/i }).click();
+    await page.getByRole('option', { name: new RegExp(uniqueMemberName, 'i') }).click();
+    await page.getByPlaceholder('Ej. MN 123456').fill(originalLicense);
+    await page.getByLabel(/Fecha de Emisión/i).fill('2026-05-01');
+    await page.getByLabel(/Fecha de Vencimiento/i).fill('2026-12-31');
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'comprobante_aptitud_e2e.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64'),
+    });
+    await page.getByRole('button', { name: 'Guardar Certificado' }).click();
+    await expect(page.getByRole('button', { name: 'Guardar Certificado' })).toBeHidden();
 
     const targetRow = page.getByRole('row', { name: uniqueMemberName });
     await expect(targetRow).toBeVisible({ timeout: 10000 });
@@ -87,18 +150,6 @@ test.describe('Medical Certificates Full-Stack E2E - Suite Completa', () => {
     await targetRow.getByRole('button', { name: /Eliminar Certificado/i }).click();
 
     await expect(targetRow).toBeHidden({ timeout: 10000 });
-
-    // Limpieza: Elimina el socio creado para no dejar datos residuales
-    await page.goto('/members');
-    const memberRow = page.getByRole('row', { name: uniqueMemberName });
-    await expect(memberRow).toBeVisible({ timeout: 10000 });
-
-    page.once('dialog', async (dialog) => {
-      await dialog.accept();
-    });
-
-    await memberRow.getByRole('button', { name: /Eliminar miembro/i }).click();
-    await expect(memberRow).toBeHidden({ timeout: 10000 });
   });
 
 });
