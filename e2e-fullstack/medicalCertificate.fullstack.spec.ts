@@ -1,49 +1,43 @@
-import { test, expect } from '@playwright/test';
+import { test as base, expect } from '@playwright/test';
 
-let uniqueMemberName = '';
-
-test.beforeEach(async ({ page }) => {
-  uniqueMemberName = `Socio Certificados ${Date.now()}`;
-  await page.goto('/members');
-  await page.locator('button:has-text("Agregar Miembro")').click();
-  await page.getByPlaceholder('Ej. Juan Pérez').fill(uniqueMemberName);
-  await page.getByPlaceholder('Ej. 12345678').fill(Math.floor(Math.random() * 89999999 + 10000000).toString());
-  await page.getByPlaceholder('ejemplo@correo.com').fill(`cert.${Date.now()}@test.com`);
-  await page.getByLabel(/Fecha de Nacimiento/i).fill('1990-01-01');
-  await page.getByRole('button', { name: 'Crear Miembro' }).click();
-  await expect(page.getByRole('button', { name: 'Crear Miembro' })).toBeHidden();
-});
-
-
-//  independencia
-
-test.afterEach(async ({ page }) => {
-  await page.goto('/medical-certificates');
-  const certRow = page.getByRole('row', { name: uniqueMemberName });
-  
-  try {
-
-    await expect(certRow).toBeVisible({ timeout: 2000 });
+const test = base.extend<{ memberSetup: { name: string } }>({
+  memberSetup: async ({ page }, use) => {
+    const uniqueMemberName = `Socio Certificados ${Date.now()}`;
     
+    await page.goto('/members');
+    await page.locator('button:has-text("Agregar Miembro")').click();
+    await page.getByPlaceholder('Ej. Juan Pérez').fill(uniqueMemberName);
+    await page.getByPlaceholder('Ej. 12345678').fill(Math.floor(Math.random() * 89999999 + 10000000).toString());
+    await page.getByPlaceholder('ejemplo@correo.com').fill(`cert.${Date.now()}@test.com`);
+    await page.getByLabel(/Fecha de Nacimiento/i).fill('1990-01-01');
+    await page.getByRole('button', { name: 'Crear Miembro' }).click();
+    await expect(page.getByRole('button', { name: 'Crear Miembro' })).toBeHidden();
+    await use({ name: uniqueMemberName });
+
+    await page.goto('/medical-certificates');
+    const certRow = page.getByRole('row', { name: uniqueMemberName });
+    
+    try {
+      await expect(certRow).toBeVisible({ timeout: 2000 });
+      page.once('dialog', async (dialog) => {
+        await dialog.accept();
+      });
+      await certRow.getByRole('button', { name: /Eliminar Certificado/i }).click();
+      await expect(certRow).toBeHidden({ timeout: 3000 });
+    } catch (e) {
+    }
+
+    await page.goto('/members');
+    const memberRow = page.getByRole('row', { name: uniqueMemberName });
+    await expect(memberRow).toBeVisible({ timeout: 10000 });
+
     page.once('dialog', async (dialog) => {
       await dialog.accept();
     });
-    await certRow.getByRole('button', { name: /Eliminar Certificado/i }).click();
-    await expect(certRow).toBeHidden({ timeout: 3000 });
-  } catch (e) {
-  }
-
-
-  await page.goto('/members');
-  const memberRow = page.getByRole('row', { name: uniqueMemberName });
-  await expect(memberRow).toBeVisible({ timeout: 10000 });
-
-  page.once('dialog', async (dialog) => {
-    await dialog.accept();
-  });
-  
-  await memberRow.getByRole('button', { name: /Eliminar miembro/i }).click();
-  await expect(memberRow).toBeHidden({ timeout: 5000 });
+    
+    await memberRow.getByRole('button', { name: /Eliminar miembro/i }).click();
+    await expect(memberRow).toBeHidden({ timeout: 5000 });
+  },
 });
 
 // =========================================================================
@@ -51,7 +45,8 @@ test.afterEach(async ({ page }) => {
 // =========================================================================
 test.describe('Medical Certificates Full-Stack E2E - Alta', () => {
 
-  test('debe cargar un certificado médico real y mostrarlo validado en el listado', async ({ page }) => {
+  test('debe cargar un certificado médico real y mostrarlo validado en el listado', async ({ page, memberSetup }) => {
+    const uniqueMemberName = memberSetup.name;
     const originalLicense = Math.floor(Math.random() * 499999 + 100000).toString();
     await page.goto('/medical-certificates');
     await page.getByRole('button', { name: /Cargar Certificado/i }).click();
@@ -83,7 +78,8 @@ test.describe('Medical Certificates Full-Stack E2E - Alta', () => {
 // =========================================================================
 test.describe('Medical Certificates Full-Stack E2E - Actualización', () => {
 
-  test('debe permitir editar la matrícula del profesional del certificado creado y ver el cambio en la tabla', async ({ page }) => {
+  test('debe permitir editar la matrícula del profesional del certificado creado y ver el cambio en la tabla', async ({ page, memberSetup }) => {
+    const uniqueMemberName = memberSetup.name;
     const originalLicense = Math.floor(Math.random() * 499999 + 100000).toString();
     const updatedLicense = Math.floor(Math.random() * 500000 + 500000).toString();
 
@@ -124,7 +120,8 @@ test.describe('Medical Certificates Full-Stack E2E - Actualización', () => {
 // =========================================================================
 test.describe('Medical Certificates Full-Stack E2E - Eliminación', () => {
 
-  test('debe eliminar físicamente el certificado médico tras confirmar la acción y removerlo de la tabla', async ({ page }) => {
+  test('debe eliminar físicamente el certificado médico tras confirmar la acción y removerlo de la tabla', async ({ page, memberSetup }) => {
+    const uniqueMemberName = memberSetup.name;
     const originalLicense = Math.floor(Math.random() * 499999 + 100000).toString();
 
     await page.goto('/medical-certificates');
