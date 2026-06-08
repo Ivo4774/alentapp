@@ -1,0 +1,147 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: alentapp-db-prod
+    env_file: .env.prod
+    volumes:
+      - pgdata-prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - alentapp-prod-net
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    # Configuración de hardening para BD
+    read_only: true
+    tmpfs:
+      - /var/run/postgresql
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    # PostgreSQL necesita permisos para cambiar el dueño de su volumen de datos al arrancar
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - FOWNER
+      - DAC_OVERRIDE
+
+  api:
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile.prod
+    container_name: alentapp-api-prod
+    env_file: .env.prod
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:                 
+      - '3000:3000' 
+      - '9464:9464'
+    networks:
+      - alentapp-prod-net
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    # Configuración de hardening para API Node
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  web:
+    build:
+      context: .
+      dockerfile: packages/web/Dockerfile.prod
+    container_name: alentapp-web-prod
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - '80:80'
+    networks:
+      - alentapp-prod-net
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://127.0.0.1:80/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    # Configuración de hardening para Nginx Unprivileged
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+  prometheus:
+    image: prom/prometheus:v2.50.1
+    container_name: alentapp-prometheus
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - '9090:9090'
+    networks:
+      - alentapp-prod-net
+
+  grafana:
+    image: grafana/grafana:10.3.3
+    container_name: alentapp-grafana
+    depends_on:
+      - prometheus
+    ports:
+      - '3001:3000' # Mapeamos al 3001 local para que no choque con la API
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - alentapp-prod-net  
+
+volumes:
+  pgdata-prod:
+
+networks:
+  alentapp-prod-net:
+    driver: bridge

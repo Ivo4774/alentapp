@@ -88,13 +88,13 @@ export function buildApp() {
 
     const paymentRepo = new PostgresPaymentRepository();
     const paymentController = new PaymentController(paymentRepo, memberRepo);
-    
+
     // --- Módulo de Certificados Médicos Refactorizado ---
     const medicalCertificateRepo = new PostgresMedicalCertificateRepository();
-    
+
     // Instanciamos el validador al estilo de la cátedra pasándole sus dependencias
     const medicalCertificateValidator = new MedicalCertificateValidator(medicalCertificateRepo, memberRepo);
-    
+
     // Inyectamos el validador en cada Caso de Uso
     const createMedicalCertificateUseCase = new CreateMedicalCertificateUseCase(medicalCertificateRepo, medicalCertificateValidator);
     const getMedicalCertificatesUseCase = new GetMedicalCertificatesUseCase(medicalCertificateRepo);
@@ -108,7 +108,7 @@ export function buildApp() {
         deleteMedicalCertificateUseCase
     );
     // ----------------------------------------------------
-  
+
     const sportRepo = new PostgresSportRepository();
     const sportValidator = new SportValidator(sportRepo);
     const createSportUseCase = new CreateSportUseCase(sportRepo, sportValidator);
@@ -157,7 +157,7 @@ export function buildApp() {
     return server;
 }
 
-if (process.argv[1] && process.argv[1].endsWith('app.ts')) {
+if (process.argv[1] && (process.argv[1].endsWith('app.ts') || process.argv[1].endsWith('app.js'))) {
     const server = buildApp();
     const port = parseInt(process.env.PORT || '3000', 10);
 
