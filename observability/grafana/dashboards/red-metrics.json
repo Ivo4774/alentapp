@@ -25,7 +25,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "ca52e73a-7523-4a3f-b059-ffd35e4da094"
+        "uid": "e237f7e8-a529-4817-9caf-d0cac20c5140"
       },
       "fieldConfig": {
         "defaults": {
@@ -83,7 +83,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "(sum(rate(http_server_duration_count{http_status_code=~\"4..|5..\"}[5m])) / sum(rate(http_server_duration_count[5m]))) * 100",
+          "expr": "(sum(rate(http_server_duration_count{http_status_code=~\"[45]..\"}[5m])) / sum(rate(http_server_duration_count[5m]))) * 100 or vector(0)",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -99,7 +99,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "ca52e73a-7523-4a3f-b059-ffd35e4da094"
+        "uid": "e237f7e8-a529-4817-9caf-d0cac20c5140"
       },
       "fieldConfig": {
         "defaults": {
@@ -179,18 +179,14 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "ca52e73a-7523-4a3f-b059-ffd35e4da094"
+            "uid": "e237f7e8-a529-4817-9caf-d0cac20c5140"
           },
-          "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "sum(rate(http_server_duration_count[1m]))",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
+          "expr": "sum(rate(http_server_duration_count[5m]))",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
-          "refId": "A",
-          "useBackend": false
+          "refId": "A"
         }
       ],
       "title": "Tasa de Tráfico Actual (Rate)",
@@ -199,7 +195,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "ca52e73a-7523-4a3f-b059-ffd35e4da094"
+        "uid": "e237f7e8-a529-4817-9caf-d0cac20c5140"
       },
       "fieldConfig": {
         "defaults": {
@@ -295,7 +291,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "ca52e73a-7523-4a3f-b059-ffd35e4da094"
+        "uid": "e237f7e8-a529-4817-9caf-d0cac20c5140"
       },
       "fieldConfig": {
         "defaults": {
@@ -339,8 +335,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -378,7 +373,7 @@
             "uid": "ca52e73a-7523-4a3f-b059-ffd35e4da094"
           },
           "editorMode": "code",
-          "expr": "sum by (http_status_code) (rate(http_server_duration_count[5m]))",
+          "expr": "sum(rate(http_server_duration_count[5m])) by (http_status_code)",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -391,7 +386,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "ca52e73a-7523-4a3f-b059-ffd35e4da094"
+        "uid": "e237f7e8-a529-4817-9caf-d0cac20c5140"
       },
       "fieldConfig": {
         "defaults": {
@@ -436,8 +431,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -475,7 +469,7 @@
             "uid": "ca52e73a-7523-4a3f-b059-ffd35e4da094"
           },
           "editorMode": "code",
-          "expr": "sum(v8js_memory_heap_used) / 1024 / 1024",
+          "expr": "v8js_memory_heap_used / 1024 / 1024",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -488,7 +482,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "ca52e73a-7523-4a3f-b059-ffd35e4da094"
+        "uid": "e237f7e8-a529-4817-9caf-d0cac20c5140"
       },
       "fieldConfig": {
         "defaults": {
@@ -500,8 +494,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -547,7 +540,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "topk(5, avg by (http_method) (rate(http_server_duration_sum[5m]) / rate(http_server_duration_count[5m])))",
+          "expr": "topk(5, sum(rate(http_server_duration_sum[5m])) by (http_route) / sum(rate(http_server_duration_count[5m])) by (http_route))",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -591,8 +584,7 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -664,8 +656,7 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -752,8 +743,7 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -865,8 +855,7 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -919,7 +908,7 @@
       "type": "row"
     }
   ],
-  "refresh": false,
+  "refresh": "",
   "schemaVersion": 39,
   "tags": [],
   "templating": {
