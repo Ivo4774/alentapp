@@ -1,9 +1,33 @@
-import { test, expect } from '@playwright/test';
+import { test as base, expect } from '@playwright/test';
+
+type TestFixtures = {
+  uniqueName: string;
+};
+
+const test = base.extend<TestFixtures>({
+  uniqueName: async ({ page }, use, testInfo) => {
+    // Generamos un nombre que contenga el título del test para mantener el contexto
+    const name = `${testInfo.title.split(' ')[2]} E2E ${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    
+    await use(name);
+    
+    // Teardown (limpieza aislada por test)
+    await page.goto('/sports');
+    const row = page.getByRole('row', { name: name });
+    if (await row.isVisible({ timeout: 2000 }).catch(() => false)) {
+      page.removeAllListeners('dialog');
+      page.once('dialog', async (dialog) => {
+        await dialog.accept();
+      });
+      await row.getByRole('button', { name: 'Eliminar' }).click();
+      await expect(row).toBeHidden({ timeout: 5000 }).catch(() => {});
+    }
+  }
+});
 
 test.describe('Sports Full-Stack E2E - Alta', () => {
 
-  test('debe crear una disciplina real y mostrarla en la tabla', async ({ page }) => {
-    const uniqueName = `Boxeo E2E ${Date.now()}`;
+  test('debe crear una disciplina real y mostrarla en la tabla', async ({ page, uniqueName }) => {
     await page.goto('/sports');
 
     await page.locator('button:has-text("Nuevo Deporte")').click();
@@ -33,9 +57,8 @@ test.describe('Sports Full-Stack E2E - Alta', () => {
 
 test.describe('Sports Full-Stack E2E - Edición', () => {
 
-  test('debe editar un deporte existente y ver el cambio en la tabla', async ({ page }) => {
+  test('debe editar un deporte existente y ver el cambio en la tabla', async ({ page, uniqueName }) => {
     // Generar un nombre único para aislar el test de otros runs
-    const uniqueName = `Tenis E2E ${Date.now()}`;
     await page.goto('/sports');
 
     // 1. Crear el deporte primero para asegurarnos de que exista
@@ -73,8 +96,7 @@ test.describe('Sports Full-Stack E2E - Edición', () => {
 
 test.describe('Sports Full-Stack E2E - Eliminación', () => {
 
-  test('debe poder eliminar un deporte tras aceptar la alerta de confirmación', async ({ page }) => {
-    const uniqueName = `Rugby E2E ${Date.now()}`;
+  test('debe poder eliminar un deporte tras aceptar la alerta de confirmación', async ({ page, uniqueName }) => {
     await page.goto('/sports');
 
     // 1. Crear el deporte
