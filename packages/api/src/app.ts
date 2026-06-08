@@ -1,3 +1,4 @@
+import './infrastructure/telemetry.js';
 import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
