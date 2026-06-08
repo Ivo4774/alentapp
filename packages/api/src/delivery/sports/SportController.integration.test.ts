@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { FastifyInstance } from 'fastify';
 import { buildApp } from '../../app.js';
 import { CreateSportRequest } from '@alentapp/shared';
@@ -30,10 +30,17 @@ describe('Sport API Integration Tests', () => {
 
     afterAll(async () => {
         await app.close();
+        vi.restoreAllMocks(); // Buena práctica: restaurar mocks globales al final
+    });
+
+    beforeEach(() => {
+        vi.clearAllMocks(); // Limpiamos el conteo de los mocks antes de cada test para no arrastrar basura
     });
 
     describe('POST /api/v1/sports', () => {
-        it('debe retornar 201 y crear el deporte con payload valido', async () => {
+        describe('con payload válido', () => {
+            let response: any;
+            let body: any;
             const payload: CreateSportRequest = {
                 name: 'Tenis',
                 description: 'Cancha de polvo de ladrillo',
@@ -42,19 +49,35 @@ describe('Sport API Integration Tests', () => {
                 requires_medical_certificate: false
             };
 
-            const response = await app.inject({
-                method: 'POST',
-                url: '/api/v1/sports',
-                payload
+            beforeEach(async () => {
+                response = await app.inject({
+                    method: 'POST',
+                    url: '/api/v1/sports',
+                    payload
+                });
+                body = JSON.parse(response.payload);
             });
 
-            expect(response.statusCode).toBe(201);
-            const body = JSON.parse(response.payload);
-            expect(body.data.name).toBe('Tenis');
-            expect(body.data.id).toBeDefined();
+            it('debe retornar 201', () => {
+                expect(response.statusCode).toBe(201);
+            });
+
+            it('debe llamar al repositorio para crear el recurso', () => {
+                expect(PostgresSportRepository.prototype.create).toHaveBeenCalled();
+            });
+
+            it('debe devolver el nombre del deporte en el payload', () => {
+                expect(body.data.name).toBe('Tenis');
+            });
+
+            it('debe devolver el ID del recurso creado', () => {
+                expect(body.data.id).toBeDefined();
+            });
         });
 
-        it('debe retornar 409 si el nombre del deporte ya existe', async () => {
+        describe('cuando el nombre del deporte ya existe', () => {
+            let response: any;
+            let body: any;
             const payload: CreateSportRequest = {
                 name: 'Natacion',
                 description: 'Pileta libre',
@@ -63,67 +86,136 @@ describe('Sport API Integration Tests', () => {
                 requires_medical_certificate: true
             };
 
-            const response = await app.inject({
-                method: 'POST',
-                url: '/api/v1/sports',
-                payload
+            beforeEach(async () => {
+                response = await app.inject({
+                    method: 'POST',
+                    url: '/api/v1/sports',
+                    payload
+                });
+                body = JSON.parse(response.payload);
             });
 
-            expect(response.statusCode).toBe(409);
-            const body = JSON.parse(response.payload);
-            expect(body.error).toBe('Ya existe un deporte con ese nombre');
+            it('debe retornar 409', () => {
+                expect(response.statusCode).toBe(409);
+            });
+
+            it('no debe llegar a llamar al repositorio create', () => {
+                expect(PostgresSportRepository.prototype.create).not.toHaveBeenCalled();
+            });
+
+            it('debe devolver el mensaje de error correspondiente', () => {
+                expect(body.error).toBe('Ya existe un deporte con ese nombre');
+            });
         });
     });
 
     describe('PATCH /api/v1/sports/:id', () => {
-        it('debe retornar 200 y actualizar el deporte con un payload válido', async () => {
+        describe('con payload válido', () => {
+            let response: any;
+            let body: any;
             const payload = { description: 'Nueva', max_capacity: 50 };
-            const response = await app.inject({
-                method: 'PATCH',
-                url: '/api/v1/sports/1',
-                payload
+
+            beforeEach(async () => {
+                response = await app.inject({
+                    method: 'PATCH',
+                    url: '/api/v1/sports/1',
+                    payload
+                });
+                body = JSON.parse(response.payload);
             });
 
-            expect(response.statusCode).toBe(200);
-            const body = JSON.parse(response.payload);
-            expect(body.data.description).toBe('Nueva');
-            expect(body.data.max_capacity).toBe(50);
+            it('debe retornar 200', () => {
+                expect(response.statusCode).toBe(200);
+            });
+
+            it('debe llamar al método update del repositorio con los datos parciales', () => {
+                expect(PostgresSportRepository.prototype.update).toHaveBeenCalledWith('1', expect.objectContaining(payload));
+            });
+
+            it('debe devolver la descripción actualizada', () => {
+                expect(body.data.description).toBe('Nueva');
+            });
+
+            it('debe devolver la capacidad actualizada', () => {
+                expect(body.data.max_capacity).toBe(50);
+            });
         });
 
-        it('debe retornar 400 si se intenta cambiar el nombre', async () => {
+        describe('cuando se intenta cambiar el nombre', () => {
+            let response: any;
+            let body: any;
             const payload = { name: 'Cambiado' };
-            const response = await app.inject({
-                method: 'PATCH',
-                url: '/api/v1/sports/1',
-                payload
+
+            beforeEach(async () => {
+                response = await app.inject({
+                    method: 'PATCH',
+                    url: '/api/v1/sports/1',
+                    payload
+                });
+                body = JSON.parse(response.payload);
             });
 
-            expect(response.statusCode).toBe(400);
-            const body = JSON.parse(response.payload);
-            expect(body.error).toBe('El nombre del deporte es inmutable');
+            it('debe retornar 400', () => {
+                expect(response.statusCode).toBe(400);
+            });
+
+            it('no debe llamar al repositorio para actualizar', () => {
+                expect(PostgresSportRepository.prototype.update).not.toHaveBeenCalled();
+            });
+
+            it('debe devolver el error de inmutabilidad del nombre', () => {
+                expect(body.error).toBe('El nombre del deporte es inmutable');
+            });
         });
     });
 
     describe('DELETE /api/v1/sports/:id', () => {
-        it('debe retornar 204 y eliminar el deporte si existe', async () => {
-            const response = await app.inject({
-                method: 'DELETE',
-                url: '/api/v1/sports/1'
+        describe('cuando el deporte existe', () => {
+            let response: any;
+
+            beforeEach(async () => {
+                response = await app.inject({
+                    method: 'DELETE',
+                    url: '/api/v1/sports/1'
+                });
             });
 
-            expect(response.statusCode).toBe(204);
-            expect(response.payload).toBe('');
+            it('debe retornar 204', () => {
+                expect(response.statusCode).toBe(204);
+            });
+
+            it('debe llamar al repositorio para eliminar el ID', () => {
+                expect(PostgresSportRepository.prototype.delete).toHaveBeenCalledWith('1');
+            });
+
+            it('debe tener un payload vacío', () => {
+                expect(response.payload).toBe('');
+            });
         });
 
-        it('debe retornar 404 si el deporte no existe', async () => {
-            const response = await app.inject({
-                method: 'DELETE',
-                url: '/api/v1/sports/999'
+        describe('cuando el deporte no existe', () => {
+            let response: any;
+            let body: any;
+
+            beforeEach(async () => {
+                response = await app.inject({
+                    method: 'DELETE',
+                    url: '/api/v1/sports/999'
+                });
+                body = JSON.parse(response.payload);
             });
 
-            expect(response.statusCode).toBe(404);
-            const body = JSON.parse(response.payload);
-            expect(body.error).toBe('El deporte no existe');
+            it('debe retornar 404', () => {
+                expect(response.statusCode).toBe(404);
+            });
+
+            it('no debe llamar al repositorio para eliminar', () => {
+                expect(PostgresSportRepository.prototype.delete).not.toHaveBeenCalled();
+            });
+
+            it('debe devolver el error de no existencia', () => {
+                expect(body.error).toBe('El deporte no existe');
+            });
         });
     });
 });

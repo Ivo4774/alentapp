@@ -21,7 +21,7 @@ describe('CreateSportUseCase', () => {
         vi.clearAllMocks();
     });
 
-    it('debe persistir el deporte si todas las validaciones son exitosas', async () => {
+    describe('cuando todas las validaciones son exitosas', () => {
         const inputData = {
             name: 'Futbol',
             description: 'Cancha 11',
@@ -33,20 +33,36 @@ describe('CreateSportUseCase', () => {
         const expectedSport: SportDTO = {
             ...inputData,
             id: '123',
-            created_at: new Date().toISOString()
+            created_at: expect.any(String) // Es más seguro usar expect.any para fechas generadas dinámicamente
         };
 
-        vi.mocked(mockSportValidator.validateNameIsUnique).mockResolvedValueOnce();
-        vi.mocked(mockSportRepo.create).mockResolvedValueOnce(expectedSport);
+        let result: SportDTO;
 
-        const result = await useCase.execute(inputData);
+        beforeEach(async () => {
+            vi.mocked(mockSportValidator.validateNameIsUnique).mockResolvedValueOnce();
+            vi.mocked(mockSportRepo.create).mockResolvedValueOnce(expectedSport);
+            result = await useCase.execute(inputData);
+        });
 
-        expect(mockSportValidator.validateCapacity).toHaveBeenCalledWith(22);
-        expect(mockSportValidator.validatePrice).toHaveBeenCalledWith(0);
-        expect(mockSportValidator.validateNameIsUnique).toHaveBeenCalledWith('Futbol');
-        
-        expect(mockSportRepo.create).toHaveBeenCalledWith(inputData);
-        expect(result).toEqual(expectedSport);
+        it('debe validar la capacidad', () => {
+            expect(mockSportValidator.validateCapacity).toHaveBeenCalledWith(22);
+        });
+
+        it('debe validar el precio', () => {
+            expect(mockSportValidator.validatePrice).toHaveBeenCalledWith(0);
+        });
+
+        it('debe validar que el nombre sea único', () => {
+            expect(mockSportValidator.validateNameIsUnique).toHaveBeenCalledWith('Futbol');
+        });
+
+        it('debe persistir el deporte en el repositorio', () => {
+            expect(mockSportRepo.create).toHaveBeenCalledWith(inputData);
+        });
+
+        it('debe retornar el deporte creado', () => {
+            expect(result).toEqual(expectedSport);
+        });
     });
 
     it('debe abortar la creacion si una validacion falla', async () => {
